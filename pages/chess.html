@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – Chess</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="background:linear-gradient(135deg,#1a1a2e,#16213e);min-height:100vh">
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">♟️</div>
+    <div class="spinner"></div>
+    <div class="loading-title">Chess</div>
+  </div>
+</div>
+<nav class="navbar">
+  <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤</span>
+    <a href="../index.html" class="btn btn-outline" style="font-size:.85rem">🏠 Home</a>
+    <a href="history.html"  class="btn btn-outline" style="font-size:.85rem">📊 Results</a>
+    <button class="btn btn-outline" id="nav-logout-btn" style="display:none;font-size:.85rem" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+<div class="chess-layout">
+  <!-- Left info panel -->
+  <div class="chess-info">
+    <div class="sidebar-title" style="color:#e2e8f0">🎯 Difficulty</div>
+    <button class="diff-btn active" id="cd-easy"   onclick="setChessDiff('easy')"  style="color:#e2e8f0;border-color:#334155;background:#1e293b">😊 Easy</button>
+    <button class="diff-btn"        id="cd-medium" onclick="setChessDiff('medium')" style="color:#e2e8f0;border-color:#334155;background:#1e293b">🤔 Medium</button>
+    <button class="diff-btn"        id="cd-hard"   onclick="setChessDiff('hard')"   style="color:#e2e8f0;border-color:#334155;background:#1e293b">😈 Hard</button>
+    <div style="margin-top:20px;border-top:1px solid #334155;padding-top:16px">
+      <div class="sidebar-title" style="color:#e2e8f0">⚫ Play As</div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="diff-btn active" id="csy-w" onclick="setChessSide('w')" style="flex:1;text-align:center;color:#e2e8f0;border-color:#334155;background:#1e293b">♔ White</button>
+        <button class="diff-btn"        id="csy-b" onclick="setChessSide('b')" style="flex:1;text-align:center;color:#e2e8f0;border-color:#334155;background:#1e293b">♚ Black</button>
+      </div>
+    </div>
+    <div style="margin-top:20px;border-top:1px solid #334155;padding-top:16px">
+      <div class="sidebar-title" style="color:#e2e8f0">📋 Move History</div>
+      <div class="move-history" id="move-history" style="background:#0f172a;color:#94a3b8">
+        <div style="color:#64748b;font-style:italic">No moves yet</div>
+      </div>
+    </div>
+  </div>
+  <!-- Board -->
+  <div class="chess-board-wrap">
+    <div class="chess-status-bar" style="background:#1e293b;box-shadow:none">
+      <div class="chess-status" id="chess-status" style="color:#e2e8f0">Press New Game to start!</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <div id="rank-labels" class="chess-rank-labels"></div>
+      <div>
+        <div id="chessboard" class="chessboard"></div>
+        <div id="file-labels" class="chess-file-labels" style="padding-left:4px"></div>
+      </div>
+    </div>
+    <!-- Captured pieces -->
+    <div style="width:100%">
+      <div style="color:#94a3b8;font-size:.78rem;font-weight:700;margin-bottom:4px">Captured by you:</div>
+      <div class="captured-pieces" id="captured-by-player"></div>
+      <div style="color:#94a3b8;font-size:.78rem;font-weight:700;margin:8px 0 4px">Captured by computer:</div>
+      <div class="captured-pieces" id="captured-by-cpu"></div>
+    </div>
+    <div class="chess-controls">
+      <button class="btn btn-primary" onclick="newChessGame()">🎮 New Game</button>
+      <a href="chess-multi.html" class="btn btn-secondary">🤝 vs Friend</a>
+      <button class="btn btn-ghost"   onclick="undoMove()" style="background:#1e293b;color:#e2e8f0;border-color:#334155">↩️ Undo</button>
+    </div>
+  </div>
+  <!-- Right: session stats -->
+  <div class="chess-info">
+    <div class="sidebar-title" style="color:#e2e8f0">📈 Session</div>
+    <div class="stat-row" style="border-color:#334155"><span class="stat-lbl" style="color:#94a3b8">🏅 Wins</span>   <span class="stat-val" style="color:#22c55e" id="chs-w">0</span></div>
+    <div class="stat-row" style="border-color:#334155"><span class="stat-lbl" style="color:#94a3b8">💔 Losses</span> <span class="stat-val" style="color:#ef4444" id="chs-l">0</span></div>
+    <div class="stat-row" style="border-color:#334155"><span class="stat-lbl" style="color:#94a3b8">🤝 Draws</span>  <span class="stat-val" style="color:#a855f7" id="chs-d">0</span></div>
+    <div class="stat-row" style="border-color:#334155"><span class="stat-lbl" style="color:#94a3b8">🔢 Moves</span>  <span class="stat-val" style="color:#e2e8f0" id="chs-m">0</span></div>
+    <div class="stat-row" style="border-color:#334155"><span class="stat-lbl" style="color:#94a3b8">⏱️ Time</span>   <span class="stat-val timer" id="chs-t" style="color:#667eea">00:00</span></div>
+    <div style="margin-top:20px;padding:14px;background:#0f172a;border-radius:12px">
+      <p style="color:#64748b;font-size:.8rem;font-weight:600;line-height:1.6">
+        ♟️ <strong style="color:#94a3b8">How to play:</strong><br>
+        Click a piece to select it.<br>
+        Green dots show legal moves.<br>
+        Click a dot to move there.<br>
+        Capture the king to win!
+      </p>
+    </div>
+  </div>
+</div>
+<!-- Result overlay -->
+<div class="result-overlay" id="chess-result">
+  <div class="result-card" style="background:#1e293b;border:1px solid #334155">
+    <span class="result-emoji" id="cr-emoji">🏆</span>
+    <div class="result-title" id="cr-title" style="color:#e2e8f0">Game Over</div>
+    <p id="cr-msg" style="color:#94a3b8;font-size:.93rem;font-weight:600;margin-bottom:4px"></p>
+    <div class="result-stats" style="background:#0f172a">
+      <div style="text-align:center"><div class="result-stat-val" id="cr-moves">0</div><div class="result-stat-lbl">🔢 Moves</div></div>
+      <div style="text-align:center"><div class="result-stat-val" id="cr-time">00:00</div><div class="result-stat-lbl">⏱️ Time</div></div>
+    </div>
+    <div class="result-btns">
+      <button class="btn btn-primary" onclick="newChessGame()">🔄 Play Again</button>
+      <a href="history.html" class="btn btn-ghost" style="background:#1e293b;color:#e2e8f0;border-color:#334155">📊 History</a>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/sound.js"></script>
+<script src="../js/chess-game.js"></script>
+</body>
+</html>

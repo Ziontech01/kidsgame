@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – My Results</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="background:linear-gradient(135deg,#f0f4ff,#fdf2ff);min-height:100vh">
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">📊</div>
+    <div class="spinner"></div>
+    <div class="loading-title">My Results</div>
+  </div>
+</div>
+<nav class="navbar">
+  <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤</span>
+    <a href="../index.html" class="btn btn-secondary" style="font-size:.85rem">🏠 Home</a>
+    <button class="btn btn-outline" id="nav-logout-btn" style="display:none;font-size:.85rem" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+<div class="history-container">
+  <div class="page-header">
+    <div class="page-title">📊 My Game Results</div>
+    <div class="page-subtitle" id="results-subtitle">Loading…</div>
+  </div>
+  <!-- Filter tabs -->
+  <div style="display:flex;gap:8px;justify-content:center;margin-bottom:24px;flex-wrap:wrap">
+    <button class="btn btn-primary"  id="filter-all"         onclick="filterResults('all')">All Games</button>
+    <button class="btn btn-ghost"    id="filter-xo"          onclick="filterResults('xo')">❌⭕ XO</button>
+    <button class="btn btn-ghost"    id="filter-chess"       onclick="filterResults('chess')">♟️ Chess</button>
+    <button class="btn btn-ghost"    id="filter-maths"       onclick="filterResults('maths')">🔢 Maths</button>
+    <button class="btn btn-ghost"    id="filter-times-tables" onclick="filterResults('times-tables')">✖️ Tables</button>
+    <button class="btn btn-ghost"    id="filter-grammar"     onclick="filterResults('grammar')">📝 Grammar</button>
+    <button class="btn btn-ghost"    id="filter-spelling"    onclick="filterResults('spelling')">🔤 Spelling</button>
+    <button class="btn btn-ghost"    id="filter-english"     onclick="filterResults('english')">📚 English</button>
+    <button class="btn btn-ghost"    id="filter-general"     onclick="filterResults('general')">🌍 GK</button>
+    <button class="btn btn-ghost"    id="filter-matching"       onclick="filterResults('matching')">🎯 Matching</button>
+    <button class="btn btn-ghost"    id="filter-memory"         onclick="filterResults('memory')">🃏 Memory</button>
+    <button class="btn btn-ghost"    id="filter-smart-life"     onclick="filterResults('smart-life')">🦸 Life Skills</button>
+    <button class="btn btn-ghost"    id="filter-science"        onclick="filterResults('science')">🔬 Science</button>
+    <button class="btn btn-ghost"    id="filter-bible"          onclick="filterResults('bible')">📖 Bible</button>
+    <button class="btn btn-ghost"    id="filter-language"       onclick="filterResults('language')">🌍 Language</button>
+    <button class="btn btn-ghost"    id="filter-snakes-ladders" onclick="filterResults('snakes-ladders')">🐍🪜 S&amp;L</button>
+    <button class="btn btn-ghost"    id="filter-spot-diff"      onclick="filterResults('spot-diff')">🔍 Spot Diff</button>
+    <button class="btn btn-ghost"    id="filter-ludo"           onclick="filterResults('ludo')">🎲 Ludo</button>
+  </div>
+  <div class="summary-grid">
+    <div class="summary-card total"> <div class="summary-icon">🎮</div><div class="summary-value" id="s-total">0</div><div class="summary-label">Games Played</div></div>
+    <div class="summary-card wins">  <div class="summary-icon">🏆</div><div class="summary-value" id="s-wins">0</div> <div class="summary-label">Wins</div></div>
+    <div class="summary-card losses"><div class="summary-icon">💔</div><div class="summary-value" id="s-losses">0</div><div class="summary-label">Losses</div></div>
+    <div class="summary-card draws"> <div class="summary-icon">🤝</div><div class="summary-value" id="s-draws">0</div> <div class="summary-label">Draws / Quizzes</div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">🕹️ Game History</div>
+      <button class="btn btn-danger" id="clear-btn" onclick="clearMyHistory()" style="display:none;font-size:.82rem;padding:7px 14px">🗑️ Clear All</button>
+    </div>
+    <div id="results-table"></div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nav.js"></script>
+<script>
+let allResults=[], activeFilter='all';
+
+requireAuth(async () => {
+  document.getElementById('results-subtitle').textContent = `Here's how you've been doing, ${HG.profile?.name || 'Player'}!`;
+  await loadResults();
+});
+
+async function loadResults() {
+  try {
+    const snap = await db.collection('results').where('uid','==',HG.user.uid).get();
+    allResults = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.date?.toDate?.()?.getTime()||0)-(a.date?.toDate?.()?.getTime()||0));
+    renderResults(allResults);
+  } catch(e) {
+    document.getElementById('results-table').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function filterResults(type) {
+  activeFilter=type;
+  document.querySelectorAll('[id^="filter-"]').forEach(b=>{ b.className='btn btn-ghost'; });
+  document.getElementById('filter-'+type).className='btn btn-primary';
+  const filtered = type==='all' ? allResults : allResults.filter(r=>r.gameType===type);
+  renderResults(filtered);
+}
+
+function renderResults(data) {
+  const wins   = data.filter(r=>r.outcome==='win').length;
+  const losses = data.filter(r=>r.outcome==='lose').length;
+  // Count draws, quiz results, and any legacy results without outcome but with a score
+  const other  = data.filter(r=>r.outcome==='draw'||r.outcome==='quiz'||(!r.outcome&&r.score!=null)).length;
+  document.getElementById('s-total').textContent  = data.length;
+  document.getElementById('s-wins').textContent   = wins;
+  document.getElementById('s-losses').textContent = losses;
+  document.getElementById('s-draws').textContent  = other;
+  document.getElementById('clear-btn').style.display = data.length>0&&activeFilter==='all'?'inline-flex':'none';
+
+  const container = document.getElementById('results-table');
+  if(!data.length) {
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">🎮</div>
+      <p>No results yet!</p><p style="margin-top:8px;font-size:.9rem;color:#bbb">Go play some games!</p>
+      <a href="../index.html" class="btn btn-primary" style="margin-top:20px">🚀 Play Now!</a></div>`;
+    return;
+  }
+
+  const gameIcons={
+    xo:'❌⭕', chess:'♟️', maths:'🔢', english:'📚', general:'🌍',
+    grammar:'📝', spelling:'🔤', 'times-tables':'✖️',
+    matching:'🎯', memory:'🃏', 'smart-life':'🦸',
+    science:'🔬', bible:'📖', language:'🌍',
+    'snakes-ladders':'🐍🪜', 'spot-diff':'🔍', ludo:'🎲'
+  };
+  const gameNames={
+    xo:'XO', chess:'Chess', maths:'Maths', english:'English', general:'GK Quiz',
+    grammar:'Grammar', spelling:'Spelling', 'times-tables':'Times Tables',
+    matching:'Matching', memory:'Memory', 'smart-life':'Life Hero',
+    science:'Science', bible:'Bible', language:'Language',
+    'snakes-ladders':'Snakes & Ladders', 'spot-diff':'Spot Diff', ludo:'Ludo'
+  };
+  const rows = data.map((r,i)=>{
+    const d = r.date?.toDate?.() || new Date();
+    const dateStr=d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const timeStr=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const outcomeBadge = r.outcome==='win'  ? `<span class="badge badge-win">🏆 Win</span>` :
+                         r.outcome==='lose' ? `<span class="badge badge-lose">💔 Loss</span>` :
+                         r.score!=null      ? `<span class="badge badge-draw">⭐ ${r.score}/${r.total}</span>` :
+                                              `<span class="badge badge-draw">🤝 Draw</span>`;
+    const gType = r.gameType || 'unknown';
+    const gBadgeCls = gType.replace(/[^a-z0-9]/gi,'-');
+    const gameBadge=`<span class="badge badge-${gBadgeCls}">${gameIcons[gType]||'🎮'} ${gameNames[gType]||gType}</span>`;
+    // Level display — handle all game types
+    let levelText = '—';
+    if (r.level && r.level !== 'all') {
+      if (r.level.startsWith('table-')) levelText = `×${r.level.replace('table-','')} Table`;
+      else if (['spanish','french','mandarin','yoruba'].includes(r.level)) {
+        const langFlags = {spanish:'🇪🇸',french:'🇫🇷',mandarin:'🇨🇳',yoruba:'🇳🇬'};
+        levelText = (langFlags[r.level]||'🌍') + ' ' + r.level.charAt(0).toUpperCase()+r.level.slice(1);
+      } else levelText = r.level.replace('year','Yr ').replace('reception','Rec');
+    } else if (r.language) {
+      const langFlags = {spanish:'🇪🇸',french:'🇫🇷',mandarin:'🇨🇳',yoruba:'🇳🇬'};
+      levelText = (langFlags[r.language]||'🌍') + ' ' + r.language.charAt(0).toUpperCase()+r.language.slice(1);
+    } else if (r.topic) {
+      const topicEmoji = {old:'🌍',new:'✝️',parable:'📖',jesus:'⭐',facts:'💡',mix:'🎲'};
+      levelText = (topicEmoji[r.topic]||'📖') + ' ' + r.topic.charAt(0).toUpperCase()+r.topic.slice(1);
+    } else if (r.scene) {
+      levelText = r.scene.replace(/[^\w\s]/gu, '').trim().slice(0,14);
+    } else if (r.category) {
+      levelText = r.category.charAt(0).toUpperCase() + r.category.slice(1);
+    } else if (r.table) {
+      levelText = `×${r.table} Table`;
+    }
+    const levelBadge=`<span class="badge badge-easy">${levelText}</span>`;
+    return `<tr>
+      <td><strong>#${data.length-i}</strong></td>
+      <td>${outcomeBadge}</td>
+      <td>${gameBadge}</td>
+      <td>${levelBadge}</td>
+      <td><strong>${r.timeStr||'--:--'}</strong></td>
+      <td>${r.moves!=null?r.moves+' moves':r.mistakes!=null?r.mistakes+' mistakes':'—'}</td>
+      <td style="color:#aaa;font-size:.85rem">${dateStr}<br><span style="font-size:.8rem">${timeStr}</span></td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr><th>#</th><th>Result</th><th>Game</th><th>Level</th><th>⏱️ Time</th><th>🔢 Moves</th><th>📅 Date</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+async function clearMyHistory() {
+  if(!confirm('Delete ALL your game history? This cannot be undone!')) return;
+  const snap = await db.collection('results').where('uid','==',HG.user.uid).get();
+  const batch = db.batch();
+  snap.docs.forEach(d=>batch.delete(d.ref));
+  await batch.commit();
+  allResults=[];
+  renderResults([]);
+}
+</script>
+</body>
+</html>

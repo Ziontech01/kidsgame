@@ -1,0 +1,747 @@
+// Happy Games – Ludo  (multi-player: 1 vs CPU / 2P / 3P+CPU / 4P)
+'use strict';
+
+const LudoGame = (() => {
+
+  /* ── Board track (52 cells) ──────────────────────────────────────
+     [col, row] zero-indexed. Clockwise from Blue entry at bottom-left.
+     COLOR_ENTRY = movement loop offset (piece position 0 in MAIN_TRACK)
+     Blue  loop offset  0  → [6,13]
+     Green loop offset 13  → [0,7]   (ensures clean transition to GREEN_HOME[0]=[1,7])
+     Yellow loop offset 26 → [8,0]   (ensures clean transition to YELLOW_HOME[0]=[7,1])
+     Red   loop offset 39  → [14,8]  (ensures clean transition to RED_HOME[0]=[13,7])
+  ─────────────────────────────────────────────────────────────────*/
+  const MAIN_TRACK = [
+    [6,13],[6,12],[6,11],[6,10],[6,9],[6,8],   //  0-5   Blue channel UP
+    [5,8],[4,8],[3,8],[2,8],[1,8],[0,8],        //  6-11  left along row 8
+    [0,7],[0,6],                                 // 12-13  Green entry=13
+    [1,6],[2,6],[3,6],[4,6],[5,6],              // 14-18  right along row 6
+    [6,5],[6,4],[6,3],[6,2],[6,1],[6,0],        // 19-24  Yellow entry area
+    [7,0],[8,0],                                 // 25-26  Yellow entry=26
+    [8,1],[8,2],[8,3],[8,4],[8,5],              // 27-31  down col 8
+    [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],   // 32-37  right along row 6
+    [14,7],[14,8],                               // 38-39  Red entry=39
+    [13,8],[12,8],[11,8],[10,8],[9,8],          // 40-44  left along row 8
+    [8,9],[8,10],[8,11],[8,12],[8,13],[8,14],   // 45-50  down col 8
+    [7,14]                                        // 51     last main cell
+  ];
+
+  // Home columns — pieces advance from pos 52 (step 1) to 56 (step 5) then 57 = done
+  const BLUE_HOME   = [[7,13],[7,12],[7,11],[7,10],[7,9]];  // col 7 going UP
+  const YELLOW_HOME = [[7,1],[7,2],[7,3],[7,4],[7,5]];       // col 7 going DOWN
+  const GREEN_HOME  = [[1,7],[2,7],[3,7],[4,7],[5,7]];       // row 7 going RIGHT
+  const RED_HOME    = [[13,7],[12,7],[11,7],[10,7],[9,7]];   // row 7 going LEFT
+
+  const HOME_COLS   = { blue: BLUE_HOME, yellow: YELLOW_HOME, green: GREEN_HOME, red: RED_HOME };
+  // Movement loop offsets: COLOR_ENTRY defines where position 0 starts on MAIN_TRACK for each color.
+  // This offset ensures the 52-cell loop ends cleanly at the home lane entrance.
+  // Note: COLOR_ENTRY ≠ visual doorstep square. Visual markers are in ENTRY_CLASS (see below).
+  const COLOR_ENTRY = { blue: 0, green: 13, yellow: 26, red: 39 };
+
+  // Centred in the middle 2×2 of each zone's 4×4 inner white area
+  const PIECE_STARTS = {
+    blue:   [[2,11],[3,11],[2,12],[3,12]],   // inner rows 10-13, cols 1-4 → centre = rows 11-12, cols 2-3
+    yellow: [[11,2],[12,2],[11,3],[12,3]],   // inner rows 1-4, cols 10-13 → centre = rows 2-3, cols 11-12
+    green:  [[2,2], [3,2], [2,3], [3,3] ],  // inner rows 1-4, cols 1-4   → centre = rows 2-3, cols 2-3
+    red:    [[11,11],[12,11],[11,12],[12,12]] // inner rows 10-13,cols 10-13→ centre = rows 11-12, cols 11-12
+  };
+
+  // Safe squares — the 4 coloured entry-point squares (no captures allowed here)
+  //   Blue:   abs  0 → [6,13]  (entry cell)
+  //   Green:  abs 12 → [0,7]   (doorstep — same ROW as GREEN_HOME[0]=[1,7])
+  //   Yellow: abs 25 → [7,0]   (doorstep — same COL as YELLOW_HOME[0]=[7,1])
+  //   Red:    abs 38 → [14,7]  (doorstep — same ROW as RED_HOME[0]=[13,7])
+  // Also protect the actual entry landing cells for green/yellow/red (one step before doorstep)
+  const SAFE = new Set([0, 12, 13, 25, 26, 38, 39]);
+
+  // Visual entry markers — the coloured squares shown at the doorstep adjacent to each home column.
+  // SEPARATE from COLOR_ENTRY. These are CSS classes for rendering, not movement logic.
+  // All 4 colours follow the SAME rule: coloured square sits in same row/col as HOME[0].
+  //
+  //   Blue   index  0 → [6,13]   same row 13  as BLUE_HOME[0]=[7,13]   ✓ (also COLOR_ENTRY)
+  //   Green  index 12 → [0,7]    same row  7  as GREEN_HOME[0]=[1,7]   ✓ (COLOR_ENTRY is 13)
+  //   Yellow index 25 → [7,0]    same col  7  as YELLOW_HOME[0]=[7,1]  ✓ (COLOR_ENTRY is 26)
+  //   Red    index 38 → [14,7]   same row  7  as RED_HOME[0]=[13,7]    ✓ (COLOR_ENTRY is 39)
+  const ENTRY_CLASS = { 0:'lc-entry-blue', 12:'lc-entry-green', 25:'lc-entry-yellow', 38:'lc-entry-red' };
+
+  const COLOR_CONFIG = {
+    blue:   { emoji: '🔵', label: 'Blue',   css: '#1e40af' },
+    yellow: { emoji: '🟡', label: 'Yellow', css: '#a16207' },
+    green:  { emoji: '🟢', label: 'Green',  css: '#166534' },
+    red:    { emoji: '🔴', label: 'Red',    css: '#991b1b' }
+  };
+
+  /* ── State ──────────────────────────────────────────────────── */
+  let state = {};
+
+  /* ════════════════════════════════════════════════════════════
+     SETUP SCREEN
+  ════════════════════════════════════════════════════════════ */
+  function init() {
+    hideLoading();
+    console.log('🎲 LUDO RUNTIME VERIFICATION:', COLOR_ENTRY);
+    // Reset dice display
+    const diceEl = document.getElementById('ludo-dice-val');
+    if (diceEl) diceEl.textContent = '🎲';
+    renderSetup();
+  }
+
+  function renderSetup() {
+    const setupEl = document.getElementById('ludo-setup');
+    if (!setupEl) return;
+    setupEl.style.display = 'block';
+
+    const gameArea = document.getElementById('ludo-game-area');
+    if (gameArea) gameArea.style.display = 'none';
+
+    const loggedName = window.currentUser?.displayName || window.userName || '';
+
+    setupEl.innerHTML = `
+      <div class="ludo-setup-card">
+        <div class="ludo-setup-title">🎲 Ludo</div>
+        <div class="ludo-setup-sub">How many players?</div>
+
+        <div class="ludo-mode-grid">
+          <button class="ludo-mode-btn" id="ludo-mode-1" onclick="LudoGame._selectMode(1)">
+            <div class="ludo-mode-icon">🤖</div>
+            <div class="ludo-mode-label">1 Player</div>
+            <div class="ludo-mode-desc">vs Computer</div>
+          </button>
+          <button class="ludo-mode-btn" id="ludo-mode-2" onclick="LudoGame._selectMode(2)">
+            <div class="ludo-mode-icon">👥</div>
+            <div class="ludo-mode-label">2 Players</div>
+            <div class="ludo-mode-desc">Pass &amp; play</div>
+          </button>
+          <button class="ludo-mode-btn" id="ludo-mode-3" onclick="LudoGame._selectMode(3)">
+            <div class="ludo-mode-icon">👨‍👩‍👧</div>
+            <div class="ludo-mode-label">3 Players</div>
+            <div class="ludo-mode-desc">+ Computer</div>
+          </button>
+          <button class="ludo-mode-btn" id="ludo-mode-4" onclick="LudoGame._selectMode(4)">
+            <div class="ludo-mode-icon">🎉</div>
+            <div class="ludo-mode-label">4 Players</div>
+            <div class="ludo-mode-desc">Full game</div>
+          </button>
+        </div>
+
+        <div id="ludo-name-section" style="display:none">
+          <div class="ludo-setup-divider">Enter Player Names</div>
+          <div id="ludo-name-inputs"></div>
+          <button class="btn btn-primary btn-lg ludo-start-btn"
+            onclick="LudoGame._startGame()">🎲 Start Game!</button>
+        </div>
+      </div>`;
+
+    // Store logged-in name for auto-fill
+    setupEl._loggedName = loggedName;
+  }
+
+  function _selectMode(mode) {
+    window.SFX?.play('click');
+
+    // Highlight selected button
+    [1,2,3,4].forEach(m => {
+      const b = document.getElementById(`ludo-mode-${m}`);
+      if (b) b.classList.toggle('ludo-mode-selected', m === mode);
+    });
+
+    const section  = document.getElementById('ludo-name-section');
+    const inputsEl = document.getElementById('ludo-name-inputs');
+    if (!section || !inputsEl) return;
+    section.style.display = 'block';
+
+    const loggedName = document.getElementById('ludo-setup')?._loggedName || '';
+
+    /* Slot definitions per mode
+       Mode 1: P1 = Blue + Red, CPU = Green + Yellow
+       Mode 2: P1 = Blue + Red, P2  = Green + Yellow
+       Mode 3: P1 = Blue, P2 = Red, P3 = Green, CPU = Yellow
+       Mode 4: P1 = Blue, P2 = Red, P3 = Green, P4  = Yellow  */
+    const slotDefs = {
+      1: [{ label:'Player 1', colors:['blue','red'],     prefill: loggedName }],
+      2: [{ label:'Player 1', colors:['blue','red'],     prefill: loggedName },
+          { label:'Player 2', colors:['green','yellow'], prefill: '' }],
+      3: [{ label:'Player 1', colors:['blue'],  prefill: loggedName },
+          { label:'Player 2', colors:['red'],   prefill: '' },
+          { label:'Player 3', colors:['green'], prefill: '' }],
+      4: [{ label:'Player 1', colors:['blue'],   prefill: loggedName },
+          { label:'Player 2', colors:['red'],    prefill: '' },
+          { label:'Player 3', colors:['green'],  prefill: '' },
+          { label:'Player 4', colors:['yellow'], prefill: '' }]
+    };
+
+    const slots = slotDefs[mode];
+    inputsEl.innerHTML = slots.map((s, i) => `
+      <div class="ludo-name-row">
+        <div class="ludo-name-chips">
+          ${s.colors.map(c =>
+            `<span class="ludo-chip ludo-chip-${c}">${COLOR_CONFIG[c].emoji} ${COLOR_CONFIG[c].label}</span>`
+          ).join('')}
+        </div>
+        <input type="text" class="ludo-name-input" id="ludo-inp-${i}"
+          placeholder="${s.label}'s name"
+          value="${s.prefill || ''}" maxlength="18" autocomplete="off"/>
+      </div>`).join('');
+
+    // Store mode + slots for _startGame
+    document.getElementById('ludo-setup')._mode  = mode;
+    document.getElementById('ludo-setup')._slots = slots;
+  }
+
+  function _startGame() {
+    window.SFX?.play('click');
+    const setupEl = document.getElementById('ludo-setup');
+    const mode    = setupEl?._mode;
+    const slots   = setupEl?._slots;
+    if (!mode || !slots) return;
+
+    // Build player array
+    const players = slots.map((s, i) => {
+      const raw  = document.getElementById(`ludo-inp-${i}`)?.value.trim();
+      const name = raw || s.label;
+      return { name, colors: s.colors, isComputer: false };
+    });
+
+    // Add CPU player(s)
+    if (mode === 1) players.push({ name: 'Computer', colors: ['green','yellow'], isComputer: true });
+    if (mode === 3) players.push({ name: 'Computer', colors: ['yellow'],          isComputer: true });
+
+    // Update corner labels
+    _updateLabels(players);
+
+    // Switch views
+    setupEl.style.display = 'none';
+    const gameArea = document.getElementById('ludo-game-area');
+    if (gameArea) gameArea.style.display = 'block';
+
+    _startGameState(players);
+  }
+
+  function _updateLabels(players) {
+    const colorOwner = {};
+    players.forEach(p => p.colors.forEach(c => { colorOwner[c] = p.name; }));
+
+    const ids = { green:'ludo-label-green', yellow:'ludo-label-yellow',
+                  blue:'ludo-label-blue',   red:'ludo-label-red' };
+    Object.entries(ids).forEach(([color, id]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = `${COLOR_CONFIG[color].emoji} ${colorOwner[color] || COLOR_CONFIG[color].label}`;
+    });
+
+    // Update player info bar
+    const infoEl = document.getElementById('ludo-player-info');
+    if (infoEl) {
+      infoEl.innerHTML = players.map(p =>
+        `<span class="ludo-pinfo-item">
+          ${p.colors.map(c =>
+            `<span class="ludo-pinfo-dot" style="background:${COLOR_CONFIG[c].css}"></span>`
+          ).join('')}
+          <span class="ludo-pinfo-name">${p.name}${p.isComputer ? ' 🤖' : ''}</span>
+        </span>`
+      ).join('');
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     GAME STATE
+  ════════════════════════════════════════════════════════════ */
+  function _startGameState(players) {
+    const pieces = {};
+    ['blue','yellow','green','red'].forEach(c => { pieces[c] = [-1,-1,-1,-1]; });
+
+    state = {
+      pieces,
+      players,
+      activeColors: players.flatMap(p => p.colors),
+      turnIdx:  0,
+      die:      null,
+      rolled:   false,
+      moving:   false,
+      over:     false,
+      startTime:  Date.now(),
+      totalMoves: 0
+    };
+
+    buildBoard();
+    renderPieces();
+    enableRoll(false);
+    updateFinishedDisplay();
+
+    const cp = _cp();
+    if (cp.isComputer) {
+      setStatus('🤖 Computer is thinking…', 'gray');
+      setTimeout(computerTurn, 900);
+    } else {
+      setStatus(`${_pEmoji(cp)} ${cp.name}'s turn — roll the dice!`, cp.colors[0]);
+      enableRoll(true);
+    }
+  }
+
+  // shorthand helpers
+  function _cp()     { return state.players[state.turnIdx]; }
+  function _pEmoji(p){ return p.colors.map(c => COLOR_CONFIG[c].emoji).join(''); }
+
+  /* ════════════════════════════════════════════════════════════
+     BUILD 15×15 BOARD
+  ════════════════════════════════════════════════════════════ */
+  function buildBoard() {
+    const board = document.getElementById('ludo-board');
+    if (!board) return;
+    board.innerHTML = '';
+
+    const trackSet  = new Set(MAIN_TRACK.map(([c,r]) => `${c},${r}`));
+    const homeColSet = {
+      blue:   new Set(BLUE_HOME.map(([c,r])   => `${c},${r}`)),
+      yellow: new Set(YELLOW_HOME.map(([c,r]) => `${c},${r}`)),
+      green:  new Set(GREEN_HOME.map(([c,r])  => `${c},${r}`)),
+      red:    new Set(RED_HOME.map(([c,r])    => `${c},${r}`))
+    };
+
+    const starterSet = new Set([
+      '2,11','3,11','2,12','3,12',    // Blue   (middle of inner area)
+      '11,2','12,2','11,3','12,3',    // Yellow
+      '2,2', '3,2', '2,3', '3,3',    // Green
+      '11,11','12,11','11,12','12,12' // Red
+    ]);
+
+    // Cross/plus pattern — each arm is a straight I-shape leading to the star
+    //   . Y .
+    //   G ★ R
+    //   . B .
+    const centerColorMap = {
+      '6,6': null,              '7,6':'lc-center-yellow', '8,6': null,
+      '6,7':'lc-center-green',  '7,7':'lc-center-star',   '8,7':'lc-center-red',
+      '6,8': null,              '7,8':'lc-center-blue',   '8,8': null
+    };
+
+    for (let row = 0; row < 15; row++) {
+      for (let col = 0; col < 15; col++) {
+        const cell = document.createElement('div');
+        cell.id    = `lc-${col}-${row}`;
+        cell.className = 'lc';
+        const key  = `${col},${row}`;
+
+        // ── Centre 3×3 (cross pattern: yellow top, green left, red right, blue bottom)
+        if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
+          cell.classList.add('lc-center');
+          const cc = centerColorMap[key];
+          if (cc) cell.classList.add(cc);
+          if (row === 7 && col === 7) { cell.classList.add('lc-center-star'); cell.textContent = '⭐'; }
+
+        // ── Home zones (6×6 corners)
+        } else if (row >= 9 && row <= 14 && col >= 0 && col <= 5) {  // Blue  BL
+          cell.classList.add('lc-home-blue');
+          if (starterSet.has(key))                                         cell.classList.add('lc-starter');
+          else if (row >= 10 && row <= 13 && col >= 1 && col <= 4)         cell.classList.add('lc-home-inner');
+
+        } else if (row >= 9 && row <= 14 && col >= 9 && col <= 14) {  // Red   BR
+          cell.classList.add('lc-home-red');
+          if (starterSet.has(key))                                         cell.classList.add('lc-starter');
+          else if (row >= 10 && row <= 13 && col >= 10 && col <= 13)       cell.classList.add('lc-home-inner');
+
+        } else if (row >= 0 && row <= 5 && col >= 9 && col <= 14) {   // Yellow TR
+          cell.classList.add('lc-home-yellow');
+          if (starterSet.has(key))                                         cell.classList.add('lc-starter');
+          else if (row >= 1 && row <= 4 && col >= 10 && col <= 13)         cell.classList.add('lc-home-inner');
+
+        } else if (row >= 0 && row <= 5 && col >= 0 && col <= 5) {    // Green  TL
+          cell.classList.add('lc-home-green');
+          if (starterSet.has(key))                                         cell.classList.add('lc-starter');
+          else if (row >= 1 && row <= 4 && col >= 1 && col <= 4)           cell.classList.add('lc-home-inner');
+
+        // ── Home columns
+        } else if (homeColSet.blue.has(key)) {
+          cell.classList.add('lc-track', 'lc-homecol-blue');
+        } else if (homeColSet.yellow.has(key)) {
+          cell.classList.add('lc-track', 'lc-homecol-yellow');
+        } else if (homeColSet.green.has(key)) {
+          cell.classList.add('lc-track', 'lc-homecol-green');
+        } else if (homeColSet.red.has(key)) {
+          cell.classList.add('lc-track', 'lc-homecol-red');
+
+        // ── Main track
+        } else if (trackSet.has(key)) {
+          const trackIdx = MAIN_TRACK.findIndex(([c,r]) => c === col && r === row);
+          cell.classList.add('lc-track');
+          // Colour the 4 entry-point squares with their player's colour
+          if (ENTRY_CLASS[trackIdx]) cell.classList.add(ENTRY_CLASS[trackIdx]);
+
+        // ── Empty (grey filler)
+        } else {
+          cell.classList.add('lc-empty');
+        }
+
+        board.appendChild(cell);
+      }
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     RENDER PIECES
+  ════════════════════════════════════════════════════════════ */
+  function renderPieces() {
+    document.querySelectorAll('.lc-piece').forEach(el => el.remove());
+
+    const cp = _cp();
+    const isHumanReady = !cp.isComputer && state.rolled && !state.moving;
+
+    state.activeColors.forEach(color => {
+      state.pieces[color].forEach((pos, pi) => {
+        if (pos === 57) return; // fully home
+        let col, row;
+        if (pos === -1) {
+          [col, row] = PIECE_STARTS[color][pi];
+        } else if (pos <= 51) {
+          [col, row] = MAIN_TRACK[(COLOR_ENTRY[color] + pos) % 52];
+        } else if (pos <= 56) {
+          [col, row] = HOME_COLS[color][pos - 52];
+        } else return;
+
+        const clickable = isHumanReady &&
+                          cp.colors.includes(color) &&
+                          getMoveable(color, state.die).includes(pi);
+        placePiece(col, row, color, pi, clickable);
+      });
+    });
+  }
+
+  function placePiece(col, row, color, pi, clickable) {
+    const cell = document.getElementById(`lc-${col}-${row}`);
+    if (!cell) return;
+    const token = document.createElement('div');
+    token.className = `lc-piece lc-piece-${color}`;
+    token.textContent = pi + 1;
+    const owner = state.players?.find(p => p.colors.includes(color));
+    token.title = `${owner?.name || color} — piece ${pi + 1}`;
+    if (clickable) {
+      token.classList.add('lc-piece-selectable');
+      token.onclick = () => _selectPiece(color, pi);
+    }
+    cell.appendChild(token);
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     ROLL DICE  (human)
+  ════════════════════════════════════════════════════════════ */
+  async function rollDice() {
+    const cp = _cp();
+    if (cp.isComputer || state.rolled || state.moving || state.over) return;
+    window.SFX?.play('click');
+    enableRoll(false);
+
+    const die = await animateDice();
+    state.die    = die;
+    state.rolled = true;
+    state.totalMoves++;
+
+    // Collect all moveable pieces across all of this player's colors
+    const moveMap = {};
+    let total = 0;
+    cp.colors.forEach(color => {
+      const m = getMoveable(color, die);
+      moveMap[color] = m;
+      total += m.length;
+    });
+
+    if (total === 0) {
+      setStatus(`${_pEmoji(cp)} ${cp.name} rolled ${die} — no moves. Next player!`, cp.colors[0]);
+      await pause(800);
+      endTurn(die !== 6);
+    } else if (total === 1) {
+      const [autoColor] = Object.entries(moveMap).find(([,m]) => m.length > 0);
+      await movePiece(autoColor, moveMap[autoColor][0], die);
+    } else {
+      setStatus(`${_pEmoji(cp)} ${cp.name} rolled ${die}! Tap a piece to move.`, cp.colors[0]);
+      renderPieces();
+    }
+  }
+
+  function _selectPiece(color, pi) {
+    const cp = _cp();
+    if (!state.rolled || state.moving || cp.isComputer) return;
+    window.SFX?.play('click');
+    movePiece(color, pi, state.die);
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     MOVE PIECE
+  ════════════════════════════════════════════════════════════ */
+  async function movePiece(color, pi, die) {
+    state.moving = true;
+    const pieces  = state.pieces[color];
+    const pos     = pieces[pi];
+    const cp      = _cp();
+    const ce      = COLOR_CONFIG[color].emoji;
+
+    if (pos === -1 && die === 6) {
+      // Enter the board
+      pieces[pi] = 0;
+      renderPieces();
+      setStatus(`${ce} ${cp.name} enters the board!`, color);
+      window.SFX?.play('click');
+      await pause(600);
+      checkCapture(color, pi);
+
+    } else if (pos >= 0) {
+      const newPos = pos + die;
+      if (newPos > 56) {
+        // Would overshoot home column — skip
+        setStatus(`${ce} ${cp.name} rolled ${die} — would overshoot! Stay.`, color);
+        await pause(700);
+      } else {
+        // Animate step by step
+        for (let step = 1; step <= die; step++) {
+          pieces[pi] = pos + step;
+          renderPieces();
+          await pause(130);
+        }
+        if (newPos === 56) {
+          pieces[pi] = 57;
+          renderPieces();
+          window.SFX?.play('win');
+          setStatus(`${ce} ${cp.name} gets a piece home! 🏠`, color);
+          await pause(600);
+          if (checkWin()) { state.moving = false; return; }
+        } else {
+          checkCapture(color, pi);
+        }
+      }
+    }
+
+    state.moving = false;
+    endTurn(die !== 6);
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     TURN MANAGEMENT
+  ════════════════════════════════════════════════════════════ */
+  function endTurn(switchPlayer) {
+    state.rolled = false;
+    state.die    = null;
+
+    if (!switchPlayer) {
+      // Rolled 6 — same player goes again
+      const cp = _cp();
+      if (cp.isComputer) {
+        setStatus('🤖 Computer rolled 6 — goes again!', 'gray');
+        setTimeout(computerTurn, 700);
+      } else {
+        setStatus(`${_pEmoji(cp)} ${cp.name} rolled 6 — roll again!`, cp.colors[0]);
+        enableRoll(true);
+      }
+      return;
+    }
+
+    // Advance turn index
+    state.turnIdx = (state.turnIdx + 1) % state.players.length;
+    const next = _cp();
+
+    if (next.isComputer) {
+      setStatus('🤖 Computer is thinking…', 'gray');
+      setTimeout(computerTurn, 900);
+    } else {
+      setStatus(`${_pEmoji(next)} ${next.name}'s turn — roll the dice!`, next.colors[0]);
+      enableRoll(true);
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     COMPUTER AI
+  ════════════════════════════════════════════════════════════ */
+  async function computerTurn() {
+    if (state.over) return;
+    const cp = _cp();
+    if (!cp.isComputer) return;
+
+    const die = await animateDice();
+    setStatus(`🤖 Computer rolled ${die}`, 'gray');
+    await pause(400);
+
+    // Score every possible move across all computer colors
+    let best = null, bestScore = -Infinity;
+    cp.colors.forEach(color => {
+      getMoveable(color, die).forEach(pi => {
+        const score = _aiScore(color, pi, die);
+        if (score > bestScore) { bestScore = score; best = { color, pi }; }
+      });
+    });
+
+    if (!best) {
+      setStatus('🤖 Computer rolled ' + die + ' — no moves!', 'gray');
+      await pause(700);
+      endTurn(die !== 6);
+      return;
+    }
+
+    await movePiece(best.color, best.pi, die);
+  }
+
+  function _aiScore(color, pi, die) {
+    const pos   = state.pieces[color][pi];
+    const after = pos === -1 ? 0 : pos + die;
+    if (after > 51) return 100 + after; // entering home col = great
+
+    const absAfter = (COLOR_ENTRY[color] + after) % 52;
+
+    // Big bonus for capturing an enemy
+    let bonus = 0;
+    state.players.forEach(p => {
+      if (p === _cp()) return; // skip own team
+      p.colors.forEach(ec => {
+        state.pieces[ec].forEach(ep => {
+          if (ep < 0 || ep > 51) return;
+          if ((COLOR_ENTRY[ec] + ep) % 52 === absAfter && !SAFE.has(absAfter)) bonus = 60;
+        });
+      });
+    });
+
+    return after + bonus;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     CAPTURE LOGIC
+  ════════════════════════════════════════════════════════════ */
+  function checkCapture(moverColor, moverPi) {
+    const pos = state.pieces[moverColor][moverPi];
+    if (pos < 0 || pos > 51) return;
+    const moverAbs = (COLOR_ENTRY[moverColor] + pos) % 52;
+    if (SAFE.has(moverAbs)) return;
+
+    const moverPlayer = state.players.find(p => p.colors.includes(moverColor));
+
+    state.activeColors.forEach(victimColor => {
+      if (victimColor === moverColor) return;
+      // Skip teammates (same player owns both colors)
+      if (state.players.find(p => p.colors.includes(victimColor)) === moverPlayer) return;
+
+      state.pieces[victimColor].forEach((vp, vi) => {
+        if (vp < 0 || vp > 51) return;
+        if ((COLOR_ENTRY[victimColor] + vp) % 52 === moverAbs) {
+          state.pieces[victimColor][vi] = -1;
+          window.SFX?.play('opponent_move');
+          setStatus(
+            `💥 ${COLOR_CONFIG[moverColor].emoji} captured ${COLOR_CONFIG[victimColor].emoji}! Sent home.`,
+            moverColor
+          );
+        }
+      });
+    });
+    renderPieces();
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     WIN DETECTION
+  ════════════════════════════════════════════════════════════ */
+  function checkWin() {
+    for (const player of state.players) {
+      if (player.colors.every(c => state.pieces[c].every(p => p === 57))) {
+        state.over = true;
+        endGame(player);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async function endGame(winner) {
+    enableRoll(false);
+    const elapsed = Math.round((Date.now() - state.startTime) / 1000);
+    const mm = Math.floor(elapsed / 60), ss = String(elapsed % 60).padStart(2, '0');
+    const timeStr = `${mm}:${ss}`;
+    const isHuman = !winner.isComputer;
+    const colStr  = winner.colors.map(c => COLOR_CONFIG[c].emoji).join('');
+
+    window.SFX?.play(isHuman ? 'win' : 'lose');
+    setStatus(`${isHuman ? '🏆' : '🤖'} ${winner.name} wins! ${colStr}`, winner.colors[0]);
+
+    const overlay = document.getElementById('ludo-end');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      document.getElementById('ludo-end-icon').textContent  = isHuman ? '🏆' : '🤖';
+      document.getElementById('ludo-end-title').textContent = `${winner.name} Wins!`;
+      document.getElementById('ludo-end-msg').textContent   = isHuman
+        ? `Brilliant! ${winner.name} got all ${colStr} pieces home first!`
+        : `The computer won this time. Better luck next game!`;
+      document.getElementById('ludo-end-stats').innerHTML =
+        `<span>Moves: ${state.totalMoves}</span><span>Time: ${timeStr}</span>`;
+    }
+
+    if (isHuman) {
+      await saveResult({
+        gameType: 'ludo', outcome: 'win', level: 'all',
+        moves: state.totalMoves, duration: elapsed, timeStr
+      });
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     HELPERS
+  ════════════════════════════════════════════════════════════ */
+  function getMoveable(color, die) {
+    return state.pieces[color].reduce((acc, pos, pi) => {
+      if (pos === 57) return acc;
+      if (pos === -1 && die === 6)  { acc.push(pi); return acc; }
+      if (pos === -1) return acc;
+      if (pos + die <= 56) acc.push(pi);
+      return acc;
+    }, []);
+  }
+
+  function updateFinishedDisplay() {
+    const el = document.getElementById('ludo-finished');
+    if (!el || !state.activeColors) return;
+    el.innerHTML = state.activeColors.map(color => {
+      const n = state.pieces[color].filter(p => p === 57).length;
+      return `${COLOR_CONFIG[color].emoji} ${Array.from({length:4},(_,i)=>i<n?'🏠':'⬜').join('')}`;
+    }).join(' &nbsp; ');
+  }
+
+  function animateDice() {
+    return new Promise(resolve => {
+      const el     = document.getElementById('ludo-dice-val');
+      const faces  = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+      const result = Math.floor(Math.random() * 6) + 1;
+      let   count  = 0;
+      const iv = setInterval(() => {
+        if (el) el.textContent = faces[Math.floor(Math.random() * 6)];
+        if (++count >= 8) {
+          clearInterval(iv);
+          if (el) el.textContent = faces[result - 1];
+          resolve(result);
+        }
+      }, 80);
+    });
+  }
+
+  function setStatus(msg, colour) {
+    const el = document.getElementById('ludo-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color =
+      colour === 'blue'   ? '#1e40af' :
+      colour === 'yellow' ? '#a16207' :
+      colour === 'green'  ? '#166534' :
+      colour === 'red'    ? '#991b1b' : '#374151';
+  }
+
+  function enableRoll(on) {
+    const btn = document.getElementById('ludo-roll-btn');
+    if (btn) { btn.disabled = !on; btn.style.opacity = on ? '1' : '0.45'; }
+  }
+
+  function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function hideLoading() {
+    const ol = document.getElementById('loading-overlay');
+    if (ol) ol.classList.add('hidden');
+  }
+
+  function restartGame() {
+    window.SFX?.play('click');
+    document.getElementById('ludo-end').style.display = 'none';
+    document.getElementById('ludo-dice-val').textContent = '🎲';
+    init(); // back to setup screen
+  }
+
+  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame };
+})();

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – XO vs Friend</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="background:linear-gradient(135deg,#f0f4ff,#fdf2ff);min-height:100vh">
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">❌⭕</div>
+    <div class="spinner"></div>
+    <div class="loading-title">XO vs Friend</div>
+    <p style="opacity:.8;font-size:.9rem;font-weight:600">Setting up multiplayer…</p>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤</span>
+    <a href="../index.html" class="btn btn-outline" style="font-size:.85rem">🏠 Home</a>
+    <a href="history.html"  class="btn btn-outline" style="font-size:.85rem">📊 Results</a>
+    <button class="btn btn-outline" id="nav-logout-btn"
+            style="display:none;font-size:.85rem" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<div style="display:flex;justify-content:center;padding:32px 16px 48px;
+            min-height:calc(100vh - 70px)">
+  <div id="multi-root" style="width:100%;max-width:500px"></div>
+</div>
+
+<!-- Stale-opponent banner — shown by JS after 35 s without a heartbeat -->
+<div id="stale-banner" class="stale-banner" style="display:none">
+  <span class="stale-msg">⚠️ Your friend may have lost connection.</span>
+  <div class="stale-btns">
+    <button class="btn btn-primary"
+            onclick="claimWinXM()"
+            style="padding:8px 18px;font-size:.85rem">🏆 Claim Win</button>
+    <button class="btn stale-dismiss"
+            onclick="hideStaleBanner()">⏳ Keep Waiting</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/sound.js"></script>
+<script src="../js/xo-multi.js"></script>
+</body>
+</html>

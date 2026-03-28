@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – Leaderboard</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="background:linear-gradient(135deg,#f0f4ff,#fdf2ff);min-height:100vh">
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">🏆</div>
+    <div class="spinner"></div>
+    <div class="loading-title">Leaderboard</div>
+  </div>
+</div>
+<nav class="navbar">
+  <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤</span>
+    <a href="../index.html"    class="btn btn-secondary" style="font-size:.85rem">🏠 Home</a>
+    <a href="history.html"     class="btn btn-outline"   style="font-size:.85rem">📊 My Results</a>
+    <button class="btn btn-outline" id="nav-logout-btn"  style="display:none;font-size:.85rem" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+<div class="history-container">
+  <div class="page-header">
+    <div class="page-title">🏆 Leaderboard</div>
+    <div class="page-subtitle">Top players across all games!</div>
+  </div>
+  <!-- Filter -->
+  <div style="display:flex;gap:10px;justify-content:center;margin-bottom:28px;flex-wrap:wrap">
+    <button class="btn btn-primary" id="lb-all"     onclick="loadLeaderboard('all')">All Games</button>
+    <button class="btn btn-ghost"   id="lb-maths"   onclick="loadLeaderboard('maths')">🔢 Maths</button>
+    <button class="btn btn-ghost"   id="lb-english" onclick="loadLeaderboard('english')">📚 English</button>
+    <button class="btn btn-ghost"   id="lb-general" onclick="loadLeaderboard('general')">🌍 GK</button>
+    <button class="btn btn-ghost"   id="lb-xo"      onclick="loadLeaderboard('xo')">❌⭕ XO</button>
+    <button class="btn btn-ghost"   id="lb-chess"   onclick="loadLeaderboard('chess')">♟️ Chess</button>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="table-title" id="lb-title">🏆 All Games — Top Players</div></div>
+    <div id="lb-table"></div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nav.js"></script>
+<script>
+const gameIcons={xo:'❌⭕',chess:'♟️',maths:'🔢',english:'📚',general:'🌍',all:'🎮'};
+const gameLabels={xo:'XO',chess:'Chess',maths:'Maths',english:'English',general:'GK',all:'All Games'};
+
+softAuth(() => loadLeaderboard('all'));
+
+async function loadLeaderboard(type) {
+  document.querySelectorAll('[id^="lb-"]').forEach(b=>b.className='btn btn-ghost');
+  document.getElementById('lb-'+type).className='btn btn-primary';
+  document.getElementById('lb-title').textContent=`🏆 ${gameLabels[type]} — Top Players`;
+  const container=document.getElementById('lb-table');
+  container.innerHTML='<div style="text-align:center;padding:30px;color:#aaa">Loading…</div>';
+  try {
+    let query = db.collection('results').limit(200);
+    if(type!=='all') query = query.where('gameType','==',type);
+    const snap = await query.get();
+    const results = snap.docs.map(d=>d.data());
+    // Aggregate by user
+    const players={};
+    results.forEach(r=>{
+      if(!players[r.uid]) players[r.uid]={name:r.name||'Unknown',username:r.username||'',wins:0,total:0,quizScore:0,quizCount:0};
+      players[r.uid].total++;
+      if(r.outcome==='win') players[r.uid].wins++;
+      if(r.score!=null){ players[r.uid].quizScore+=r.score; players[r.uid].quizCount+=r.total||10; }
+    });
+    const arr=Object.entries(players).map(([uid,d])=>({uid,...d,
+      winRate: d.total>0?Math.round((d.wins/d.total)*100):0,
+      avgScore: d.quizCount>0?Math.round((d.quizScore/d.quizCount)*100):null
+    }));
+    arr.sort((a,b)=>(b.wins+b.quizScore)-(a.wins+a.quizScore));
+    renderLeaderboard(arr.slice(0,20), type);
+  } catch(e) {
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function renderLeaderboard(data, type) {
+  const container=document.getElementById('lb-table');
+  if(!data.length){
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div>
+      <p>No data yet! Be the first to play!</p>
+      <a href="../index.html" class="btn btn-primary" style="margin-top:20px">🚀 Play Now</a></div>`;
+    return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  const rows=data.map((p,i)=>{
+    const rankDisp = i<3 ? `<span class="leader-rank ${['rank-1','rank-2','rank-3'][i]}">${medals[i]}</span>` : `<span class="leader-rank">#${i+1}</span>`;
+    const initial=(p.name||'?').charAt(0).toUpperCase();
+    const isMe = HG.user && p.uid===HG.user.uid;
+    const isQuizGame=['maths','english','general'].includes(type)||type==='all';
+    return `<tr style="${isMe?'background:#f0f4ff;font-weight:800':''}">
+      <td>${rankDisp}</td>
+      <td><div style="display:flex;align-items:center;gap:10px">
+        <div class="leader-avatar">${initial}</div>
+        <div><div style="font-weight:800">${p.name||'Unknown'} ${isMe?'<span style="color:#667eea;font-size:.75rem">(You)</span>':''}</div>
+        <div style="font-size:.78rem;color:#aaa">@${p.username||'—'}</div></div>
+      </div></td>
+      <td><strong>${p.wins}</strong></td>
+      <td>${p.total}</td>
+      <td><strong>${p.winRate}%</strong></td>
+      ${isQuizGame?`<td>${p.avgScore!=null?p.avgScore+'%':'—'}</td>`:''}
+    </tr>`;
+  }).join('');
+  const isQuizGame=['maths','english','general'].includes(type)||type==='all';
+  container.innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr><th>Rank</th><th>Player</th><th>🏆 Wins</th><th>Games</th><th>Win Rate</th>${isQuizGame?'<th>Quiz Avg</th>':''}</tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – Learn & Play!</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">🎮</div>
+    <div class="spinner"></div>
+    <div class="loading-title">Happy Games</div>
+    <p style="opacity:.8;font-size:1rem;font-weight:600">Loading…</p>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="nav-logo" href="index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤 Player</span>
+    <a href="pages/history.html"     class="btn btn-outline" style="font-size:.85rem">📊 My Results</a>
+    <a href="pages/leaderboard.html" class="btn btn-outline" style="font-size:.85rem">🏆 Leaderboard</a>
+    <a href="login.html" class="btn btn-secondary" id="nav-login-btn">🔑 Login / Sign Up</a>
+    <button class="btn btn-outline" id="nav-logout-btn" style="display:none" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-emoji">🎮</span>
+  <h1 class="hero-title">Learn & Play with<br>Happy Games!</h1>
+  <p class="hero-subtitle">Fun games and quizzes for kids of all ages. Get smarter while having a blast! 🚀</p>
+  <div class="hero-cta">
+    <a href="#games" class="btn btn-primary btn-lg">🕹️ Play Now</a>
+    <a href="login.html" class="btn btn-outline btn-lg" id="hero-signup-btn">✨ Sign Up Free</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hero-stat-value">13</div><div class="hero-stat-label">Game Modes</div></div>
+    <div class="hero-stat"><div class="hero-stat-value">7</div><div class="hero-stat-label">Year Levels</div></div>
+    <div class="hero-stat"><div class="hero-stat-value">500+</div><div class="hero-stat-label">Questions</div></div>
+    <div class="hero-stat"><div class="hero-stat-value">Free</div><div class="hero-stat-label">Always!</div></div>
+  </div>
+</section>
+
+<!-- AUTH MODAL (shown when guest clicks locked game) -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="modal-icon">🔒</div>
+    <div class="modal-title">Login Required</div>
+    <p class="modal-text" id="auth-modal-msg">Please sign in or create a free account to play this game!</p>
+    <div class="modal-buttons">
+      <button class="btn btn-primary"   onclick="goToLogin()">🔑 Login / Sign Up</button>
+      <button class="btn btn-ghost"     onclick="closeAuthModal()">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAMES SECTION -->
+<section class="section" id="games">
+  <h2 class="section-title">🕹️ Choose Your Game</h2>
+  <p class="section-subtitle">Pick a game and start your adventure!</p>
+
+  <!-- ── Arcade & Board Games ── -->
+  <div style="max-width:1100px;margin:0 auto 12px">
+    <div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--gray);margin-bottom:16px;
+                display:flex;align-items:center;gap:8px">
+      🎮 Arcade &amp; Board Games
+    </div>
+    <div class="games-grid" style="margin-bottom:0">
+
+      <!-- XO -->
+      <div class="game-card xo" id="card-xo" onclick="openGame('xo')">
+        <span class="game-card-emoji">❌⭕</span>
+        <div class="game-card-badge badge-login" id="badge-xo">🔑 Login to play</div>
+        <div class="game-card-title">Tic Tac Toe</div>
+        <div class="game-card-desc">Beat the computer or challenge a friend! Three AI levels + live multiplayer.</div>
+        <button class="btn btn-purple btn-full">Play XO</button>
+      </div>
+
+      <!-- Chess -->
+      <div class="game-card chess" id="card-chess" onclick="openGame('chess')">
+        <span class="game-card-emoji">♟️</span>
+        <div class="game-card-badge badge-login" id="badge-chess">🔑 Login to play</div>
+        <div class="game-card-title">Chess</div>
+        <div class="game-card-desc">Play chess against the computer or challenge a friend online in real time!</div>
+        <button class="btn btn-blue btn-full" style="background:linear-gradient(135deg,#1a1a2e,#16213e)">Play Chess</button>
+      </div>
+
+      <!-- Snakes & Ladders -->
+      <div class="game-card" onclick="window.location.href='pages/snakes-ladders.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🐍🪜</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Snakes &amp; Ladders</div>
+        <div class="game-card-desc">Roll the dice, climb ladders and dodge snakes — can you reach square 100 first?</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff">Play Snakes &amp; Ladders</button>
+      </div>
+
+      <!-- Ludo -->
+      <div class="game-card" onclick="window.location.href='pages/ludo.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#dc2626,#2563eb);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🎲</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Ludo</div>
+        <div class="game-card-desc">Get all 4 pieces home before the computer does! Roll a 6 to enter the board.</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#dc2626,#2563eb);color:#fff">Play Ludo</button>
+      </div>
+
+      <!-- Spot the Difference -->
+      <div class="game-card" onclick="window.location.href='pages/spot-diff.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🔍</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Spot the Difference</div>
+        <div class="game-card-desc">Find all 5 differences between two pictures — use hints if you need them!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff">Play Spot the Difference</button>
+      </div>
+
+      <!-- Matching -->
+      <div class="game-card" onclick="window.location.href='pages/matching.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🎯</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Matching Game</div>
+        <div class="game-card-desc">Match animals to their homes, shapes to names, colours to their mixes!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff">Play Matching</button>
+      </div>
+
+      <!-- Memory -->
+      <div class="game-card" onclick="window.location.href='pages/memory.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#a855f7,#ec4899);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🃏</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Memory Game</div>
+        <div class="game-card-desc">Flip cards to find matching pairs — animals, flags, numbers and Bible characters!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff">Play Memory</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Quiz & Learning ── -->
+  <div style="max-width:1100px;margin:32px auto 12px">
+    <div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--gray);margin-bottom:16px;
+                display:flex;align-items:center;gap:8px">
+      📚 Quiz &amp; Learning
+    </div>
+    <div class="games-grid" style="margin-bottom:0">
+
+      <!-- Maths -->
+      <div class="game-card maths" onclick="window.location.href='pages/maths.html'">
+        <span class="game-card-emoji">🔢</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Maths Quiz</div>
+        <div class="game-card-desc">Addition, subtraction, multiplication and more — by year level!</div>
+        <button class="btn btn-orange btn-full">Play Maths</button>
+      </div>
+
+      <!-- Times Tables -->
+      <div class="game-card" onclick="window.location.href='pages/times-tables.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#f97316,#dc2626);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">✖️</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Times Tables</div>
+        <div class="game-card-desc">Master your 1× to 12× tables with visual dot-group explanations!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#f97316,#dc2626);color:#fff">Play Times Tables</button>
+      </div>
+
+      <!-- Grammar -->
+      <div class="game-card" onclick="window.location.href='pages/grammar.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">📝</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Grammar Quiz</div>
+        <div class="game-card-desc">Punctuation, sentence types, tenses and word classes — Reception to Year 6!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff">Play Grammar</button>
+      </div>
+
+      <!-- Spelling -->
+      <div class="game-card" onclick="window.location.href='pages/spelling.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#0ea5e9,#6366f1);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🔤</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Spelling Quiz</div>
+        <div class="game-card-desc">UK curriculum word lists from Reception to Year 6 — with tricks to remember!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff">Play Spelling</button>
+      </div>
+
+      <!-- Science -->
+      <div class="game-card" onclick="window.location.href='pages/science.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#0d9488,#0891b2);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🔬</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Science Quiz</div>
+        <div class="game-card-desc">Plants, animals, space, forces and the human body — Reception to Year 6!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#0d9488,#0891b2);color:#fff">Play Science</button>
+      </div>
+
+      <!-- Bible -->
+      <div class="game-card" onclick="window.location.href='pages/bible.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#d97706,#b45309);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">📖</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Bible Quiz</div>
+        <div class="game-card-desc">Old Testament, New Testament, Parables and the life of Jesus — with rich explanations!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#d97706,#b45309);color:#fff">Play Bible Quiz</button>
+      </div>
+
+      <!-- Language -->
+      <div class="game-card" onclick="window.location.href='pages/language.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#7c3aed,#db2777);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🌍</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">Language Game</div>
+        <div class="game-card-desc">Learn Spanish, French, Mandarin &amp; Yoruba — greetings, food, numbers and more!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff">Play Language Game</button>
+      </div>
+
+      <!-- English -->
+      <div class="game-card english" onclick="window.location.href='pages/english.html'">
+        <span class="game-card-emoji">📚</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">English Quiz</div>
+        <div class="game-card-desc">Vocabulary, comprehension and word challenges for every year group!</div>
+        <button class="btn btn-green btn-full">Play English</button>
+      </div>
+
+      <!-- General Knowledge -->
+      <div class="game-card general" onclick="window.location.href='pages/general.html'">
+        <span class="game-card-emoji">🌍</span>
+        <div class="game-card-badge badge-free">✅ Free to play</div>
+        <div class="game-card-title">General Knowledge</div>
+        <div class="game-card-desc">Animals, science, geography and everyday facts. How much do you know?</div>
+        <button class="btn btn-blue btn-full">Play GK Quiz</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Life Skills ── -->
+  <div style="max-width:1100px;margin:32px auto 12px">
+    <div style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--gray);margin-bottom:16px;
+                display:flex;align-items:center;gap:8px">
+      🦸 Life Skills
+    </div>
+    <div class="games-grid" style="margin-bottom:0">
+
+      <!-- Smart Life Hero -->
+      <div class="game-card" onclick="window.location.href='pages/smart-life.html'">
+        <div style="position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(135deg,#a855f7,#6366f1,#ec4899);border-radius:20px 20px 0 0"></div>
+        <span class="game-card-emoji">🦸</span>
+        <div class="game-card-badge" style="background:#faf5ff;color:#6d28d9">✨ 8 Life Skills</div>
+        <div class="game-card-title">Smart Life Hero</div>
+        <div class="game-card-desc">Morning routines, kindness, safety, hygiene and more — become a life skills champion!</div>
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#a855f7,#6366f1);color:#fff">Play Smart Life</button>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- FEATURES -->
+<section class="section" style="background:linear-gradient(135deg,#f0f4ff,#fdf2ff);padding-top:20px">
+  <h2 class="section-title">⭐ Why Kids Love Happy Games</h2>
+  <p class="section-subtitle">Built for fun. Designed to learn.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-emoji">🎯</span>
+      <div class="feature-title">Year-Level Quizzes</div>
+      <div class="feature-desc">Questions matched to Reception through Year 6 so every child can succeed.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-emoji">🏆</span>
+      <div class="feature-title">Track Progress</div>
+      <div class="feature-desc">Every game is saved so kids and parents can see how they're improving.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-emoji">🤖</span>
+      <div class="feature-title">Play vs Computer</div>
+      <div class="feature-desc">Challenge our AI in Chess and Tic Tac Toe at your own pace.</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-emoji">🤝</span>
+      <div class="feature-title">Play vs Friend</div>
+      <div class="feature-desc">Challenge a friend online in real-time Chess or Tic Tac Toe — just share a room code!</div>
+    </div>
+    <div class="feature-card">
+      <span class="feature-emoji">📱</span>
+      <div class="feature-title">Works Everywhere</div>
+      <div class="feature-desc">Play on any device — phone, tablet or computer — at home or at school.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR PARENTS -->
+<section class="section">
+  <div style="max-width:680px;margin:0 auto;text-align:center">
+    <h2 class="section-title">👨‍👩‍👧 For Parents & Teachers</h2>
+    <p style="color:var(--gray);font-size:1rem;font-weight:600;line-height:1.8;margin-bottom:28px">
+      Happy Games is a safe, ad-free learning platform for children aged 4–11. Each game is carefully
+      designed to support the UK primary school curriculum. Children can create a free account,
+      choose their year group, and play at their own level. All results are saved securely so you can
+      check progress anytime.
+    </p>
+    <a href="login.html" class="btn btn-primary btn-lg" id="parent-signup-btn">Create a Free Account</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-logo">🎮 Happy Games</div>
+  <p>Making learning fun for kids everywhere. Free forever. ❤️</p>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  softAuth((user) => {
+    // Update hero signup button
+    const heroSignup  = document.getElementById('hero-signup-btn');
+    const parentSignup= document.getElementById('parent-signup-btn');
+    if (user) {
+      if (heroSignup) heroSignup.style.display = 'none';
+      if (parentSignup) parentSignup.textContent = '📊 View My Results';
+      if (parentSignup) parentSignup.href = 'pages/history.html';
+      // Update game card badges for logged-in users
+      ['xo','chess'].forEach(id => {
+        const badge = document.getElementById('badge-' + id);
+        if (badge) { badge.className = 'game-card-badge badge-free'; badge.textContent = '✅ Ready to play'; }
+      });
+    }
+  });
+
+  function openGame(game) {
+    if (!HG.user) { showAuthModal(game === 'xo' ? 'Tic Tac Toe' : 'Chess'); return; }
+    window.location.href = 'pages/' + game + '.html';
+  }
+</script>
+</body>
+</html>

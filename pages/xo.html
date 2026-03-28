@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – Tic Tac Toe</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="background:linear-gradient(135deg,#f0f4ff,#fdf2ff);min-height:100vh">
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">❌⭕</div>
+    <div class="spinner"></div>
+    <div class="loading-title">Tic Tac Toe</div>
+  </div>
+</div>
+<nav class="navbar">
+  <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤</span>
+    <a href="../index.html" class="btn btn-outline" style="font-size:.85rem">🏠 Home</a>
+    <a href="history.html"  class="btn btn-outline" style="font-size:.85rem">📊 Results</a>
+    <button class="btn btn-outline" id="nav-logout-btn" style="display:none;font-size:.85rem" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+<div class="confetti-wrap" id="confetti-wrap"></div>
+<div class="xo-layout">
+  <!-- Left: settings -->
+  <div class="xo-sidebar">
+    <div class="sidebar-title">🎯 Difficulty</div>
+    <button class="diff-btn easy active" id="diff-easy"   onclick="setDiff('easy')">😊 Easy — Random moves</button>
+    <button class="diff-btn"            id="diff-medium" onclick="setDiff('medium')">🤔 Medium — Blocks & attacks</button>
+    <button class="diff-btn"            id="diff-hard"   onclick="setDiff('hard')">😈 Hard — Unbeatable AI</button>
+    <div style="margin-top:20px">
+      <div class="sidebar-title">🃏 Play As</div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="diff-btn active" id="sym-x" onclick="setSym('X')" style="flex:1;text-align:center;font-size:1.2rem">❌ X</button>
+        <button class="diff-btn"        id="sym-o" onclick="setSym('O')" style="flex:1;text-align:center;font-size:1.2rem">⭕ O</button>
+      </div>
+    </div>
+  </div>
+  <!-- Center: board -->
+  <div class="xo-center">
+    <div class="xo-status-bar"><div class="xo-status" id="xo-status">Press New Game to start!</div></div>
+    <div class="xo-board" id="xo-board">
+      <div class="xo-cell" id="c0" onclick="cellClick(0)"><span class="cell-sym" id="s0"></span></div>
+      <div class="xo-cell" id="c1" onclick="cellClick(1)"><span class="cell-sym" id="s1"></span></div>
+      <div class="xo-cell" id="c2" onclick="cellClick(2)"><span class="cell-sym" id="s2"></span></div>
+      <div class="xo-cell" id="c3" onclick="cellClick(3)"><span class="cell-sym" id="s3"></span></div>
+      <div class="xo-cell" id="c4" onclick="cellClick(4)"><span class="cell-sym" id="s4"></span></div>
+      <div class="xo-cell" id="c5" onclick="cellClick(5)"><span class="cell-sym" id="s5"></span></div>
+      <div class="xo-cell" id="c6" onclick="cellClick(6)"><span class="cell-sym" id="s6"></span></div>
+      <div class="xo-cell" id="c7" onclick="cellClick(7)"><span class="cell-sym" id="s7"></span></div>
+      <div class="xo-cell" id="c8" onclick="cellClick(8)"><span class="cell-sym" id="s8"></span></div>
+    </div>
+    <div class="xo-controls">
+      <button class="btn btn-primary" onclick="newGame()">🎮 New Game</button>
+      <a href="xo-multi.html" class="btn btn-secondary">🤝 vs Friend</a>
+      <a href="history.html" class="btn btn-ghost">📊 Results</a>
+    </div>
+  </div>
+  <!-- Right: stats -->
+  <div class="xo-sidebar">
+    <div class="sidebar-title">📈 Live Stats</div>
+    <div class="stat-row"><span class="stat-lbl">⏱️ Time</span>  <span class="stat-val timer" id="st-timer">00:00</span></div>
+    <div class="stat-row"><span class="stat-lbl">🔢 Moves</span> <span class="stat-val" id="st-moves">0</span></div>
+    <div class="stat-row"><span class="stat-lbl">🎯 Level</span> <span class="stat-val" id="st-diff">Easy</span></div>
+    <div style="margin-top:18px;border-top:2px dashed #f3f4f6;padding-top:18px">
+      <div class="sidebar-title">🏆 Session</div>
+      <div class="stat-row"><span class="stat-lbl">🏅 Wins</span>   <span class="stat-val" style="color:#22c55e" id="sc-w">0</span></div>
+      <div class="stat-row"><span class="stat-lbl">💔 Losses</span> <span class="stat-val" style="color:#ef4444" id="sc-l">0</span></div>
+      <div class="stat-row"><span class="stat-lbl">🤝 Draws</span>  <span class="stat-val" style="color:#a855f7" id="sc-d">0</span></div>
+    </div>
+  </div>
+</div>
+<!-- Result overlay -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <span class="result-emoji" id="r-emoji">🎉</span>
+    <div class="result-title" id="r-title">You Win!</div>
+    <p id="r-msg" style="color:#888;font-size:.93rem;font-weight:600;margin-bottom:4px"></p>
+    <div class="result-stats">
+      <div style="text-align:center"><div class="result-stat-val" id="r-time">00:00</div><div class="result-stat-lbl">⏱️ Time</div></div>
+      <div style="text-align:center"><div class="result-stat-val" id="r-moves">0</div><div class="result-stat-lbl">🔢 Moves</div></div>
+      <div style="text-align:center"><div class="result-stat-val" id="r-diff">Easy</div><div class="result-stat-lbl">🎯 Level</div></div>
+      <div style="text-align:center"><div class="result-stat-val" id="r-date">Today</div><div class="result-stat-lbl">📅 Date</div></div>
+    </div>
+    <div class="result-btns">
+      <button class="btn btn-primary" onclick="newGame()">🔄 Play Again</button>
+      <a href="history.html" class="btn btn-secondary">📊 History</a>
+    </div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/sound.js"></script>
+<script src="../js/xo.js"></script>
+</body>
+</html>
