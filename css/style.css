@@ -885,11 +885,11 @@ tr:hover td{background:#fafbff}
 .lc-track {background:#fff;border:1px solid #d1d5db}
 .lc-corner{background:#cbd5e1}
 
-/* Entry-point squares — bold colours matching home zones, clearly visible */
-.lc-entry-blue  {background:#1e40af !important;border:1px solid #1e40af !important;color:#fff !important}
-.lc-entry-yellow{background:#ca8a04 !important;border:1px solid #ca8a04 !important;color:#fff !important}
-.lc-entry-green {background:#15803d !important;border:1px solid #15803d !important;color:#fff !important}
-.lc-entry-red   {background:#dc2626 !important;border:1px solid #dc2626 !important;color:#fff !important}
+/* Entry + doorstep squares — bold colours with ★ safe-square markers */
+.lc-entry-blue  {background:#1e40af !important;border:1px solid #1e40af !important;color:rgba(255,255,255,.55) !important;font-size:.55rem;font-weight:900}
+.lc-entry-yellow{background:#ca8a04 !important;border:1px solid #ca8a04 !important;color:rgba(255,255,255,.55) !important;font-size:.55rem;font-weight:900}
+.lc-entry-green {background:#15803d !important;border:1px solid #15803d !important;color:rgba(255,255,255,.55) !important;font-size:.55rem;font-weight:900}
+.lc-entry-red   {background:#dc2626 !important;border:1px solid #dc2626 !important;color:rgba(255,255,255,.55) !important;font-size:.55rem;font-weight:900}
 
 /* Home column straights — bold vivid colours */
 .lc-homecol-blue  {background:#1e40af !important;border:1px solid #1e40af !important}

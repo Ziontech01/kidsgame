@@ -52,7 +52,7 @@ const LudoGame = (() => {
   //   Yellow: abs 25 → [7,0]   (doorstep — same COL as YELLOW_HOME[0]=[7,1])
   //   Red:    abs 38 → [14,7]  (doorstep — same ROW as RED_HOME[0]=[13,7])
   // Also protect the actual entry landing cells for green/yellow/red (one step before doorstep)
-  const SAFE = new Set([0, 12, 13, 25, 26, 38, 39]);
+  const SAFE = new Set([0, 51, 12, 13, 25, 26, 38, 39]);
 
   // Visual entry markers — the coloured squares shown at the doorstep adjacent to each home column.
   // SEPARATE from COLOR_ENTRY. These are CSS classes for rendering, not movement logic.
@@ -62,7 +62,20 @@ const LudoGame = (() => {
   //   Green  index 12 → [0,7]    same row  7  as GREEN_HOME[0]=[1,7]   ✓ (COLOR_ENTRY is 13)
   //   Yellow index 25 → [7,0]    same col  7  as YELLOW_HOME[0]=[7,1]  ✓ (COLOR_ENTRY is 26)
   //   Red    index 38 → [14,7]   same row  7  as RED_HOME[0]=[13,7]    ✓ (COLOR_ENTRY is 39)
-  const ENTRY_CLASS = { 0:'lc-entry-blue', 12:'lc-entry-green', 25:'lc-entry-yellow', 38:'lc-entry-red' };
+  // Colour BOTH the entry square (where pieces first land when rolling 6)
+  // AND the doorstep square (last main-track cell before turning into the home column).
+  // This gives every colour a consistent pair of coloured safe squares on the track.
+  //
+  //   Blue:   entry  0 → [6,13]   doorstep 51 → [7,14]
+  //   Green:  entry 13 → [0,6]    doorstep 12 → [0,7]
+  //   Yellow: entry 26 → [8,0]    doorstep 25 → [7,0]
+  //   Red:    entry 39 → [14,8]   doorstep 38 → [14,7]
+  const ENTRY_CLASS = {
+    0:'lc-entry-blue',   51:'lc-entry-blue',      // Blue   entry + doorstep
+    12:'lc-entry-green',  13:'lc-entry-green',     // Green  doorstep + entry
+    25:'lc-entry-yellow', 26:'lc-entry-yellow',    // Yellow doorstep + entry
+    38:'lc-entry-red',    39:'lc-entry-red'        // Red    doorstep + entry
+  };
 
   const COLOR_CONFIG = {
     blue:   { emoji: '🔵', label: 'Blue',   css: '#1e40af' },
@@ -363,8 +376,11 @@ const LudoGame = (() => {
         } else if (trackSet.has(key)) {
           const trackIdx = MAIN_TRACK.findIndex(([c,r]) => c === col && r === row);
           cell.classList.add('lc-track');
-          // Colour the 4 entry-point squares with their player's colour
-          if (ENTRY_CLASS[trackIdx]) cell.classList.add(ENTRY_CLASS[trackIdx]);
+          // Colour entry + doorstep squares with their player's colour
+          if (ENTRY_CLASS[trackIdx]) {
+            cell.classList.add(ENTRY_CLASS[trackIdx]);
+            cell.textContent = '★';   // safe-square star marker
+          }
 
         // ── Empty (grey filler)
         } else {

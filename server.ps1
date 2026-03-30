@@ -1,9 +1,5 @@
 $port = if ($env:PORT) { $env:PORT } else { 5500 }
 $root = $PSScriptRoot
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/")
-$listener.Start()
-Write-Host "Serving $root on http://localhost:$port"
 
 $mimeTypes = @{
   ".html" = "text/html; charset=utf-8"
@@ -14,40 +10,62 @@ $mimeTypes = @{
   ".ico"  = "image/x-icon"
   ".svg"  = "image/svg+xml"
   ".json" = "application/json"
+  ".gif"  = "image/gif"
+  ".woff" = "font/woff"
+  ".woff2"= "font/woff2"
+  ".mp3"  = "audio/mpeg"
+  ".wav"  = "audio/wav"
 }
 
-while ($listener.IsListening) {
-  $ctx  = $listener.GetContext()
-  $req  = $ctx.Request
-  $res  = $ctx.Response
-  $path = $req.Url.LocalPath
-  if ($path -eq "/" -or $path -eq "") { $path = "/index.html" }
-  $file = Join-Path $root $path.TrimStart("/").Replace("/", [System.IO.Path]::DirectorySeparatorChar)
+# Use raw TcpListener instead of HttpListener to avoid
+# the .NET ProtocolViolationException / ContentLength bug.
+$tcp = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
+$tcp.Start()
+Write-Host "Serving $root on http://localhost:$port"
 
-  # Disable keep-alive so connection closes after each response,
-  # removing any dependency on ContentLength being declared upfront.
-  $res.KeepAlive = $false
-
+while ($true) {
   try {
-    if (Test-Path $file -PathType Leaf) {
-      $ext   = [System.IO.Path]::GetExtension($file)
-      $mime  = if ($mimeTypes[$ext]) { $mimeTypes[$ext] } else { "application/octet-stream" }
+    $client = $tcp.AcceptTcpClient()
+    $stream = $client.GetStream()
+    $stream.ReadTimeout  = 5000
+    $stream.WriteTimeout = 5000
+
+    # Read the raw HTTP request (just need the first line for the path)
+    $buf = New-Object byte[] 4096
+    $n   = $stream.Read($buf, 0, $buf.Length)
+    if ($n -eq 0) { $client.Close(); continue }
+
+    $raw         = [System.Text.Encoding]::UTF8.GetString($buf, 0, $n)
+    $requestLine = ($raw -split "`r`n")[0]          # e.g. "GET /index.html HTTP/1.1"
+    $parts       = $requestLine -split ' '
+    $path        = if ($parts.Length -ge 2) { $parts[1] } else { "/" }
+    if ($path -eq "/" -or $path -eq "") { $path = "/index.html" }
+
+    # Strip query string
+    $path = ($path -split '\?')[0]
+
+    # Resolve file on disk
+    $rel  = $path.TrimStart("/").Replace("/", [System.IO.Path]::DirectorySeparatorChar)
+    $file = Join-Path $root $rel
+
+    if ((Test-Path $file -PathType Leaf)) {
       $bytes = [System.IO.File]::ReadAllBytes($file)
-      $res.StatusCode      = 200
-      $res.ContentType     = $mime
-      $res.ContentLength64 = $bytes.Length
-      $res.OutputStream.Write($bytes, 0, $bytes.Length)
+      $ext   = [System.IO.Path]::GetExtension($file).ToLower()
+      $mime  = if ($mimeTypes[$ext]) { $mimeTypes[$ext] } else { "application/octet-stream" }
+      $hdr   = "HTTP/1.1 200 OK`r`nContent-Type: $mime`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`nCache-Control: no-cache`r`n`r`n"
     } else {
-      $msg = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
-      $res.StatusCode      = 404
-      $res.ContentType     = "text/plain"
-      $res.ContentLength64 = $msg.Length
-      $res.OutputStream.Write($msg, 0, $msg.Length)
+      $bytes = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found: $path")
+      $hdr   = "HTTP/1.1 404 Not Found`r`nContent-Type: text/plain`r`nContent-Length: $($bytes.Length)`r`nConnection: close`r`n`r`n"
     }
+
+    $hdrBytes = [System.Text.Encoding]::ASCII.GetBytes($hdr)
+    $stream.Write($hdrBytes, 0, $hdrBytes.Length)
+    $stream.Write($bytes,    0, $bytes.Length)
+    $stream.Flush()
+    $client.Close()
+
   } catch {
-    Write-Host "Error serving $path : $_"
-    try { $res.Abort() } catch {}
-  } finally {
-    try { $res.OutputStream.Close() } catch {}
+    Write-Host "Error: $_"
+    try { $client.Close() } catch {}
   }
 }
