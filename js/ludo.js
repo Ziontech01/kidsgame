@@ -3,30 +3,40 @@
 
 const LudoGame = (() => {
 
-  /* ── Board track (52 cells) ──────────────────────────────────────
+  /* ── Board track (56 cells) ──────────────────────────────────────
      [col, row] zero-indexed. Clockwise from Blue entry at bottom-left.
+     All 56 transitions are orthogonally adjacent (no diagonal jumps).
+     Includes 4 centre-corner cells [6,8],[6,6],[8,6],[8,8] where arms meet.
+
      COLOR_ENTRY = movement loop offset (piece position 0 in MAIN_TRACK)
-     Blue  loop offset  0  → [6,13]
-     Green loop offset 13  → [0,7]   (ensures clean transition to GREEN_HOME[0]=[1,7])
-     Yellow loop offset 26 → [8,0]   (ensures clean transition to YELLOW_HOME[0]=[7,1])
-     Red   loop offset 39  → [14,8]  (ensures clean transition to RED_HOME[0]=[13,7])
+     Blue   entry  0 → [6,13]  doorstep 54 → [7,14]  (adjacent to BLUE_HOME[0]=[7,13])
+     Green  entry 14 → [1,6]   doorstep 12 → [0,7]   (adjacent to GREEN_HOME[0]=[1,7])
+     Yellow entry 28 → [8,1]   doorstep 26 → [7,0]   (adjacent to YELLOW_HOME[0]=[7,1])
+     Red    entry 42 → [13,8]  doorstep 40 → [14,7]  (adjacent to RED_HOME[0]=[13,7])
+
+     All 4 entries are one cell inward from the arm tip corner, matching
+     the physical board.  Rotationally symmetric under 90° CW around [7,7].
   ─────────────────────────────────────────────────────────────────*/
   const MAIN_TRACK = [
-    [6,13],[6,12],[6,11],[6,10],[6,9],[6,8],   //  0-5   Blue channel UP
+    [6,13],[6,12],[6,11],[6,10],[6,9],         //  0-4   Blue entry ★, going UP
+    [6,8],                                      //  5     centre corner (BL)
     [5,8],[4,8],[3,8],[2,8],[1,8],[0,8],        //  6-11  left along row 8
-    [0,7],[0,6],                                 // 12-13  Green entry=13
-    [1,6],[2,6],[3,6],[4,6],[5,6],              // 14-18  right along row 6
-    [6,5],[6,4],[6,3],[6,2],[6,1],[6,0],        // 19-24  Yellow entry area
-    [7,0],[8,0],                                 // 25-26  Yellow entry=26
-    [8,1],[8,2],[8,3],[8,4],[8,5],              // 27-31  down col 8
-    [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],   // 32-37  right along row 6
-    [14,7],[14,8],                               // 38-39  Red entry=39
-    [13,8],[12,8],[11,8],[10,8],[9,8],          // 40-44  left along row 8
-    [8,9],[8,10],[8,11],[8,12],[8,13],[8,14],   // 45-50  down col 8
-    [7,14]                                        // 51     last main cell
+    [0,7],[0,6],                                // 12-13  Green doorstep + tip corner
+    [1,6],[2,6],[3,6],[4,6],[5,6],              // 14-18  Green entry ★ at 14, right along row 6
+    [6,6],                                      // 19     centre corner (TL)
+    [6,5],[6,4],[6,3],[6,2],[6,1],[6,0],        // 20-25  up col 6
+    [7,0],[8,0],                                // 26-27  Yellow doorstep + tip corner
+    [8,1],[8,2],[8,3],[8,4],[8,5],              // 28-32  Yellow entry ★ at 28, down col 8
+    [8,6],                                      // 33     centre corner (TR)
+    [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],   // 34-39  right along row 6
+    [14,7],[14,8],                              // 40-41  Red doorstep + tip corner
+    [13,8],[12,8],[11,8],[10,8],[9,8],          // 42-46  Red entry ★ at 42, left along row 8
+    [8,8],                                      // 47     centre corner (BR)
+    [8,9],[8,10],[8,11],[8,12],[8,13],[8,14],   // 48-53  down col 8
+    [7,14],[6,14]                               // 54-55  Blue doorstep + tip corner
   ];
 
-  // Home columns — pieces advance from pos 52 (step 1) to 56 (step 5) then 57 = done
+  // Home columns — pieces advance from pos 55 (step 1) to 59 (step 5) then 60 = done
   const BLUE_HOME   = [[7,13],[7,12],[7,11],[7,10],[7,9]];  // col 7 going UP
   const YELLOW_HOME = [[7,1],[7,2],[7,3],[7,4],[7,5]];       // col 7 going DOWN
   const GREEN_HOME  = [[1,7],[2,7],[3,7],[4,7],[5,7]];       // row 7 going RIGHT
@@ -34,9 +44,9 @@ const LudoGame = (() => {
 
   const HOME_COLS   = { blue: BLUE_HOME, yellow: YELLOW_HOME, green: GREEN_HOME, red: RED_HOME };
   // Movement loop offsets: COLOR_ENTRY defines where position 0 starts on MAIN_TRACK for each color.
-  // This offset ensures the 52-cell loop ends cleanly at the home lane entrance.
-  // Note: COLOR_ENTRY ≠ visual doorstep square. Visual markers are in ENTRY_CLASS (see below).
-  const COLOR_ENTRY = { blue: 0, green: 13, yellow: 26, red: 39 };
+  // This offset ensures the 56-cell loop ends cleanly at the home lane entrance.
+  // Each colour's doorstep is at relative pos 54 = (entry + 54) % 56 in MAIN_TRACK.
+  const COLOR_ENTRY = { blue: 0, green: 14, yellow: 28, red: 42 };
 
   // Centred in the middle 2×2 of each zone's 4×4 inner white area
   const PIECE_STARTS = {
@@ -46,35 +56,26 @@ const LudoGame = (() => {
     red:    [[11,11],[12,11],[11,12],[12,12]] // inner rows 10-13,cols 10-13→ centre = rows 11-12, cols 11-12
   };
 
-  // Safe squares — the 4 coloured entry-point squares (no captures allowed here)
-  //   Blue:   abs  0 → [6,13]  (entry cell)
-  //   Green:  abs 12 → [0,7]   (doorstep — same ROW as GREEN_HOME[0]=[1,7])
-  //   Yellow: abs 25 → [7,0]   (doorstep — same COL as YELLOW_HOME[0]=[7,1])
-  //   Red:    abs 38 → [14,7]  (doorstep — same ROW as RED_HOME[0]=[13,7])
-  // Also protect the actual entry landing cells for green/yellow/red (one step before doorstep)
-  const SAFE = new Set([0, 51, 12, 13, 25, 26, 38, 39]);
+  // Safe squares — entry + doorstep for each colour (no captures allowed)
+  //   Blue:   abs  0 → [6,13]  (entry)     abs 54 → [7,14]  (doorstep)
+  //   Green:  abs 14 → [1,6]   (entry)     abs 12 → [0,7]   (doorstep)
+  //   Yellow: abs 28 → [8,1]   (entry)     abs 26 → [7,0]   (doorstep)
+  //   Red:    abs 42 → [13,8]  (entry)     abs 40 → [14,7]  (doorstep)
+  const SAFE = new Set([0, 54, 12, 14, 26, 28, 40, 42]);
 
-  // Visual entry markers — the coloured squares shown at the doorstep adjacent to each home column.
-  // SEPARATE from COLOR_ENTRY. These are CSS classes for rendering, not movement logic.
-  // All 4 colours follow the SAME rule: coloured square sits in same row/col as HOME[0].
+  // Visual entry markers — colour BOTH the entry square (where pieces first land)
+  // AND the doorstep square (last main-track cell before the home column).
+  // All 4 entries are one cell inward from arm tip, matching physical boards.
   //
-  //   Blue   index  0 → [6,13]   same row 13  as BLUE_HOME[0]=[7,13]   ✓ (also COLOR_ENTRY)
-  //   Green  index 12 → [0,7]    same row  7  as GREEN_HOME[0]=[1,7]   ✓ (COLOR_ENTRY is 13)
-  //   Yellow index 25 → [7,0]    same col  7  as YELLOW_HOME[0]=[7,1]  ✓ (COLOR_ENTRY is 26)
-  //   Red    index 38 → [14,7]   same row  7  as RED_HOME[0]=[13,7]    ✓ (COLOR_ENTRY is 39)
-  // Colour BOTH the entry square (where pieces first land when rolling 6)
-  // AND the doorstep square (last main-track cell before turning into the home column).
-  // This gives every colour a consistent pair of coloured safe squares on the track.
-  //
-  //   Blue:   entry  0 → [6,13]   doorstep 51 → [7,14]
-  //   Green:  entry 13 → [0,6]    doorstep 12 → [0,7]
-  //   Yellow: entry 26 → [8,0]    doorstep 25 → [7,0]
-  //   Red:    entry 39 → [14,8]   doorstep 38 → [14,7]
+  //   Blue:   entry  0 → [6,13]   doorstep 54 → [7,14]
+  //   Green:  entry 14 → [1,6]    doorstep 12 → [0,7]
+  //   Yellow: entry 28 → [8,1]    doorstep 26 → [7,0]
+  //   Red:    entry 42 → [13,8]   doorstep 40 → [14,7]
   const ENTRY_CLASS = {
-    0:'lc-entry-blue',   51:'lc-entry-blue',      // Blue   entry + doorstep
-    12:'lc-entry-green',  13:'lc-entry-green',     // Green  doorstep + entry
-    25:'lc-entry-yellow', 26:'lc-entry-yellow',    // Yellow doorstep + entry
-    38:'lc-entry-red',    39:'lc-entry-red'        // Red    doorstep + entry
+    0:'lc-entry-blue',                             // Blue   entry only
+    14:'lc-entry-green',                           // Green  entry only
+    28:'lc-entry-yellow',                          // Yellow entry only
+    42:'lc-entry-red'                              // Red    entry only
   };
 
   const COLOR_CONFIG = {
@@ -317,14 +318,14 @@ const LudoGame = (() => {
       '11,11','12,11','11,12','12,12' // Red
     ]);
 
-    // Cross/plus pattern — each arm is a straight I-shape leading to the star
-    //   . Y .
+    // Cross/plus pattern — centre 3×3 minus 4 corner cells that are track cells
+    //   T Y T       (T = track cell [6,6],[8,6],[6,8],[8,8])
     //   G ★ R
-    //   . B .
+    //   T B T
     const centerColorMap = {
-      '6,6': null,              '7,6':'lc-center-yellow', '8,6': null,
+      '7,6':'lc-center-yellow',
       '6,7':'lc-center-green',  '7,7':'lc-center-star',   '8,7':'lc-center-red',
-      '6,8': null,              '7,8':'lc-center-blue',   '8,8': null
+      '7,8':'lc-center-blue'
     };
 
     for (let row = 0; row < 15; row++) {
@@ -334,8 +335,8 @@ const LudoGame = (() => {
         cell.className = 'lc';
         const key  = `${col},${row}`;
 
-        // ── Centre 3×3 (cross pattern: yellow top, green left, red right, blue bottom)
-        if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
+        // ── Centre 3×3 (cross pattern — skip corners that are track cells)
+        if (row >= 6 && row <= 8 && col >= 6 && col <= 8 && !trackSet.has(key)) {
           cell.classList.add('lc-center');
           const cc = centerColorMap[key];
           if (cc) cell.classList.add(cc);
@@ -403,14 +404,14 @@ const LudoGame = (() => {
 
     state.activeColors.forEach(color => {
       state.pieces[color].forEach((pos, pi) => {
-        if (pos === 57) return; // fully home
+        if (pos === 60) return; // fully home
         let col, row;
         if (pos === -1) {
           [col, row] = PIECE_STARTS[color][pi];
-        } else if (pos <= 51) {
-          [col, row] = MAIN_TRACK[(COLOR_ENTRY[color] + pos) % 52];
-        } else if (pos <= 56) {
-          [col, row] = HOME_COLS[color][pos - 52];
+        } else if (pos <= 54) {
+          [col, row] = MAIN_TRACK[(COLOR_ENTRY[color] + pos) % 56];
+        } else if (pos <= 59) {
+          [col, row] = HOME_COLS[color][pos - 55];
         } else return;
 
         const clickable = isHumanReady &&
@@ -500,7 +501,7 @@ const LudoGame = (() => {
 
     } else if (pos >= 0) {
       const newPos = pos + die;
-      if (newPos > 56) {
+      if (newPos > 59) {
         // Would overshoot home column — skip
         setStatus(`${ce} ${cp.name} rolled ${die} — would overshoot! Stay.`, color);
         await pause(700);
@@ -511,8 +512,8 @@ const LudoGame = (() => {
           renderPieces();
           await pause(130);
         }
-        if (newPos === 56) {
-          pieces[pi] = 57;
+        if (newPos === 59) {
+          pieces[pi] = 60;
           renderPieces();
           window.SFX?.play('win');
           setStatus(`${ce} ${cp.name} gets a piece home! 🏠`, color);
@@ -595,9 +596,9 @@ const LudoGame = (() => {
   function _aiScore(color, pi, die) {
     const pos   = state.pieces[color][pi];
     const after = pos === -1 ? 0 : pos + die;
-    if (after > 51) return 100 + after; // entering home col = great
+    if (after > 54) return 100 + after; // entering home col = great
 
-    const absAfter = (COLOR_ENTRY[color] + after) % 52;
+    const absAfter = (COLOR_ENTRY[color] + after) % 56;
 
     // Big bonus for capturing an enemy
     let bonus = 0;
@@ -605,8 +606,8 @@ const LudoGame = (() => {
       if (p === _cp()) return; // skip own team
       p.colors.forEach(ec => {
         state.pieces[ec].forEach(ep => {
-          if (ep < 0 || ep > 51) return;
-          if ((COLOR_ENTRY[ec] + ep) % 52 === absAfter && !SAFE.has(absAfter)) bonus = 60;
+          if (ep < 0 || ep > 54) return;
+          if ((COLOR_ENTRY[ec] + ep) % 56 === absAfter && !SAFE.has(absAfter)) bonus = 60;
         });
       });
     });
@@ -619,8 +620,8 @@ const LudoGame = (() => {
   ════════════════════════════════════════════════════════════ */
   function checkCapture(moverColor, moverPi) {
     const pos = state.pieces[moverColor][moverPi];
-    if (pos < 0 || pos > 51) return;
-    const moverAbs = (COLOR_ENTRY[moverColor] + pos) % 52;
+    if (pos < 0 || pos > 54) return;
+    const moverAbs = (COLOR_ENTRY[moverColor] + pos) % 56;
     if (SAFE.has(moverAbs)) return;
 
     const moverPlayer = state.players.find(p => p.colors.includes(moverColor));
@@ -631,8 +632,8 @@ const LudoGame = (() => {
       if (state.players.find(p => p.colors.includes(victimColor)) === moverPlayer) return;
 
       state.pieces[victimColor].forEach((vp, vi) => {
-        if (vp < 0 || vp > 51) return;
-        if ((COLOR_ENTRY[victimColor] + vp) % 52 === moverAbs) {
+        if (vp < 0 || vp > 54) return;
+        if ((COLOR_ENTRY[victimColor] + vp) % 56 === moverAbs) {
           state.pieces[victimColor][vi] = -1;
           window.SFX?.play('opponent_move');
           setStatus(
@@ -650,7 +651,7 @@ const LudoGame = (() => {
   ════════════════════════════════════════════════════════════ */
   function checkWin() {
     for (const player of state.players) {
-      if (player.colors.every(c => state.pieces[c].every(p => p === 57))) {
+      if (player.colors.every(c => state.pieces[c].every(p => p === 60))) {
         state.over = true;
         endGame(player);
         return true;
@@ -695,10 +696,10 @@ const LudoGame = (() => {
   ════════════════════════════════════════════════════════════ */
   function getMoveable(color, die) {
     return state.pieces[color].reduce((acc, pos, pi) => {
-      if (pos === 57) return acc;
+      if (pos === 60) return acc;
       if (pos === -1 && die === 6)  { acc.push(pi); return acc; }
       if (pos === -1) return acc;
-      if (pos + die <= 56) acc.push(pi);
+      if (pos + die <= 59) acc.push(pi);
       return acc;
     }, []);
   }
@@ -707,7 +708,7 @@ const LudoGame = (() => {
     const el = document.getElementById('ludo-finished');
     if (!el || !state.activeColors) return;
     el.innerHTML = state.activeColors.map(color => {
-      const n = state.pieces[color].filter(p => p === 57).length;
+      const n = state.pieces[color].filter(p => p === 60).length;
       return `${COLOR_CONFIG[color].emoji} ${Array.from({length:4},(_,i)=>i<n?'🏠':'⬜').join('')}`;
     }).join(' &nbsp; ');
   }
