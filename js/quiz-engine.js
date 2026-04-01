@@ -94,6 +94,12 @@ const QuizEngine = (() => {
             </div>
           </div>
           <div class="quiz-score-display">⭐ <span id="q-score">0</span></div>
+          <button onclick="QuizEngine._quitQuiz()"
+            style="background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);
+                   border-radius:50px;padding:5px 14px;color:inherit;font-weight:800;
+                   font-size:.8rem;cursor:pointer;white-space:nowrap;flex-shrink:0">
+            ✕ Quit
+          </button>
         </div>
         <div class="quiz-timer-bar">
           <div class="quiz-timer-label">
@@ -310,6 +316,7 @@ const QuizEngine = (() => {
   }
 
   function _changeLevel() { init(state.config); }
+  function _quitQuiz()    { clearTimers(); renderLevelSelect(); }
 
   // ── Helpers ─────────────────────────────────────────────────
   function shuffle(arr) {
@@ -322,5 +329,5 @@ const QuizEngine = (() => {
   }
   function formatTime(s) { return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
 
-  return { init, _selectLevel, _startQuiz, _answer, _submitTyped, _changeLevel, _next: nextQuestion };
+  return { init, _selectLevel, _startQuiz, _answer, _submitTyped, _changeLevel, _quitQuiz, _next: nextQuestion };
 })();

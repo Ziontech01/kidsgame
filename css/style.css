@@ -526,29 +526,30 @@ tr:hover td{background:#fafbff}
 .matching-cat-card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);
   padding:24px 18px;text-align:center;cursor:pointer;transition:all .25s}
 .matching-cat-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.15)}
-.matching-wrap{padding:20px 16px;max-width:860px;margin:0 auto}
+.matching-wrap{padding:14px 16px;max-width:860px;margin:0 auto}
 .matching-header{display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:14px;gap:12px;flex-wrap:wrap}
-.matching-hint-bar{background:#fff;border-radius:12px;padding:10px 18px;text-align:center;
-  font-weight:700;font-size:.9rem;color:#667eea;box-shadow:0 2px 12px rgba(0,0,0,.08);
-  margin-bottom:16px;min-height:40px;transition:all .3s}
-.matching-board{display:grid;grid-template-columns:1fr 40px 1fr;gap:10px;align-items:start}
-.match-col{display:flex;flex-direction:column;gap:10px}
-.match-col-title{font-family:'Fredoka One',cursive;font-size:1rem;color:#6B7280;
-  text-align:center;padding:6px;margin-bottom:4px}
-.match-item{background:#fff;border:3px solid var(--border);border-radius:14px;
-  padding:14px 16px;font-weight:700;font-size:.92rem;color:var(--dark);cursor:pointer;
-  transition:all .2s;text-align:center;line-height:1.3}
-.match-item:hover:not(.matched):not(.wrong){border-color:#667eea;background:#f0f4ff;transform:scale(1.02)}
-.match-item.selected{border-color:#667eea;background:linear-gradient(135deg,#667eea15,#764ba215);
+  margin-bottom:10px;gap:12px;flex-wrap:wrap}
+.matching-hint-bar{background:#fff;border-radius:12px;padding:8px 16px;text-align:center;
+  font-weight:700;font-size:.85rem;color:#667eea;box-shadow:0 2px 12px rgba(0,0,0,.08);
+  margin-bottom:10px;min-height:34px;transition:all .3s}
+.matching-board{display:grid;grid-template-columns:1fr 32px 1fr;gap:6px;align-items:start}
+.match-col{display:flex;flex-direction:column;gap:6px}
+.match-col-title{font-family:'Fredoka One',cursive;font-size:.9rem;color:#6B7280;
+  text-align:center;padding:4px;margin-bottom:2px}
+.matching-board .match-item{background:#fff;border:3px solid var(--border);border-radius:12px;
+  padding:8px 12px;font-weight:700;font-size:.88rem;color:var(--dark);cursor:pointer;
+  transition:all .2s;text-align:center;line-height:1.2;aspect-ratio:auto;width:auto;
+  box-shadow:none;display:block}
+.matching-board .match-item:hover:not(.matched):not(.wrong){border-color:#667eea;background:#f0f4ff;transform:scale(1.02)}
+.matching-board .match-item.selected{border-color:#667eea;background:linear-gradient(135deg,#667eea15,#764ba215);
   box-shadow:0 4px 15px rgba(102,126,234,.2)}
-.match-item.matched{border-color:#22c55e;background:#d1fae5;color:#065f46;
+.matching-board .match-item.matched{border-color:#22c55e;background:#d1fae5;color:#065f46;
   cursor:default;animation:matchPop .3s ease}
-.match-item.wrong{border-color:#ef4444;background:#fee2e2;animation:shake .4s ease}
+.matching-board .match-item.wrong{border-color:#ef4444;background:#fee2e2;animation:shake .4s ease}
 @keyframes matchPop{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .match-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:8px;padding-top:52px}
+  gap:6px;padding-top:36px}
 .match-divider-line{width:2px;flex:1;background:linear-gradient(to bottom,transparent,#ddd,transparent)}
 .match-divider-icon{font-size:1.4rem;color:#ccc}
 
@@ -620,9 +621,12 @@ tr:hover td{background:#fafbff}
 
 /* ── Matching responsive ───────────────────────────── */
 @media(max-width:560px){
-  .matching-board{grid-template-columns:1fr 30px 1fr}
-  .match-item{font-size:.78rem;padding:10px 10px}
-  .match-divider-icon{font-size:1rem}
+  .matching-board{grid-template-columns:1fr 24px 1fr;gap:4px}
+  .match-col{gap:4px}
+  .match-item{font-size:.76rem;padding:6px 8px;border-width:2px;border-radius:10px}
+  .match-divider-icon{font-size:.9rem}
+  .match-divider{padding-top:28px}
+  .match-col-title{font-size:.8rem;padding:2px}
 }
 
 /* ── Responsive ────────────────────────────────────── */

@@ -178,7 +178,7 @@ const LanguageGame = (() => {
               </div>
             </div>
           </div>
-          <button onclick="LanguageGame.init()"
+          <button onclick="LanguageGame._selectLang('${state.lang}')"
             style="background:#f3f4f6;color:#374151;border:none;border-radius:50px;
                    padding:8px 16px;font-family:'Nunito',sans-serif;font-size:.82rem;
                    font-weight:800;cursor:pointer;flex-shrink:0">
@@ -297,16 +297,25 @@ const LanguageGame = (() => {
       <div style="max-width:600px;margin:0 auto;padding:0 16px 48px">
 
         <!-- Header -->
-        <div style="display:flex;align-items:center;gap:10px;padding:16px 0 12px;flex-wrap:wrap">
-          <span style="font-size:1.8rem">${lang.flag}</span>
-          <div>
-            <div style="font-weight:800;color:#1a1a2e;font-size:.95rem">
-              ${lang.name} — ${cat.emoji} Quiz
-            </div>
-            <div style="font-size:.78rem;color:#6b7280">
-              Question ${state.idx + 1} / ${state.phrases.length} &nbsp;·&nbsp; ⭐ ${state.score} pts
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    gap:10px;padding:16px 0 12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.8rem">${lang.flag}</span>
+            <div>
+              <div style="font-weight:800;color:#1a1a2e;font-size:.95rem">
+                ${lang.name} — ${cat.emoji} Quiz
+              </div>
+              <div style="font-size:.78rem;color:#6b7280">
+                Question ${state.idx + 1} / ${state.phrases.length} &nbsp;·&nbsp; ⭐ ${state.score} pts
+              </div>
             </div>
           </div>
+          <button onclick="LanguageGame._selectLang('${state.lang}')"
+            style="background:#f3f4f6;color:#374151;border:none;border-radius:50px;
+                   padding:8px 16px;font-family:'Nunito',sans-serif;font-size:.82rem;
+                   font-weight:800;cursor:pointer;flex-shrink:0">
+            ← Back
+          </button>
         </div>
 
         <!-- Progress bar -->
