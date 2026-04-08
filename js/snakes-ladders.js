@@ -161,7 +161,7 @@ const SnakesLadders = (() => {
       if (isPlayer) playerPos = step; else compPos = step;
       updatePieces();
       highlightSquare(step);
-      await pause(120);
+      await pause(400);
     }
     clearHighlight();
 
