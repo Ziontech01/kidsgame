@@ -9,10 +9,17 @@ const SnakesLadders = (() => {
   // Ladders: foot (low) → top (high)
   const LADDERS = { 4:14, 9:31, 20:38, 28:84, 40:59, 51:67, 63:81, 71:91 };
 
-  // One distinct colour per snake
+  // One distinct colour per snake — vibrant, attractive palette
   const SNAKE_COLORS = [
-    '#ef4444','#f97316','#a855f7','#ec4899',
-    '#06b6d4','#84cc16','#f59e0b','#6366f1','#10b981'
+    '#e53e3e',  // ruby red
+    '#38a169',  // forest green
+    '#3182ce',  // sky blue
+    '#dd6b20',  // burnt orange
+    '#805ad5',  // violet
+    '#319795',  // teal
+    '#d53f8c',  // hot pink
+    '#d69e2e',  // golden
+    '#2b6cb0'   // royal blue
   ];
 
   /* ── State ─────────────────────────────────────────────────── */
@@ -24,10 +31,16 @@ const SnakesLadders = (() => {
   let startTime  = null;
   let totalMoves = 0;
 
-  /* ── Bright cycling tile palette (8 colours) ───────────────── */
+  /* ── Vibrant cycling tile palette ──────────────────────────── */
   const CELL_COLORS = [
-    '#ffd6e7','#ffecd1','#fff9c4','#d4f4dd',
-    '#cce8ff','#ead4ff','#ffd6d6','#d4f0f0'
+    '#ffc0cb',  // pink
+    '#ffd59e',  // peach
+    '#fff176',  // yellow
+    '#a8e6cf',  // mint green
+    '#b3d9ff',  // sky blue
+    '#ddb3ff',  // lavender
+    '#ffb3b3',  // coral
+    '#b3f0ee'   // aqua
   ];
 
   /* ── Public init ───────────────────────────────────────────── */
@@ -119,7 +132,7 @@ const SnakesLadders = (() => {
     board.appendChild(svg);
   }
 
-  /* ── Draw one snake as a curvy bezier ───────────────────────── */
+  /* ── Draw one snake as a curvy bezier with proper SVG head ──── */
   function drawSnake(svg, head, tail, color) {
     const p1 = getSquareCenter(head);
     const p2 = getSquareCenter(tail);
@@ -128,11 +141,11 @@ const SnakesLadders = (() => {
     const dx  = p2.x - p1.x;
     const dy  = p2.y - p1.y;
     const len = Math.sqrt(dx * dx + dy * dy);
-    const nx  = -dy / len;  // unit perpendicular
+    const nx  = -dy / len;
     const ny  =  dx / len;
-    const amp = Math.min(len * 0.22, 28); // wiggle amplitude
+    const amp = Math.min(len * 0.22, 28);
 
-    // S-curve: two control points on opposite sides
+    // S-curve control points
     const cp1x = p1.x + dx * 0.33 + nx * amp;
     const cp1y = p1.y + dy * 0.33 + ny * amp;
     const cp2x = p1.x + dx * 0.67 - nx * amp;
@@ -140,33 +153,97 @@ const SnakesLadders = (() => {
     const d    = `M${p1.x},${p1.y} C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
 
     // Drop shadow
-    const shadow = mkPath(d, 'rgba(0,0,0,.18)', '11', 'none');
+    const shadow = mkPath(d, 'rgba(0,0,0,.22)', '15', 'none');
     shadow.setAttribute('stroke-linecap', 'round');
     svg.appendChild(shadow);
 
-    // Body
-    const body = mkPath(d, color, '7', 'none');
+    // Body — thicker (11px)
+    const body = mkPath(d, color, '11', 'none');
     body.setAttribute('stroke-linecap', 'round');
     svg.appendChild(body);
 
-    // Dashed highlight (scale pattern)
-    const highlight = mkPath(d, 'rgba(255,255,255,.38)', '3', 'none');
+    // Scale-stripe highlight
+    const highlight = mkPath(d, 'rgba(255,255,255,.32)', '4', 'none');
     highlight.setAttribute('stroke-linecap', 'round');
-    highlight.setAttribute('stroke-dasharray', '6 10');
+    highlight.setAttribute('stroke-dasharray', '8 13');
     svg.appendChild(highlight);
 
-    // Head circle
-    const hc = mkCircle(p1.x, p1.y, 11, color, '#fff', '2');
-    svg.appendChild(hc);
+    // Tail taper — thinner line over the last bit to look like a tail
+    const tailD = `M${cp2x},${cp2y} C${cp2x},${cp2y} ${p2.x},${p2.y} ${p2.x},${p2.y}`;
+    const tailTaper = mkPath(tailD, 'rgba(0,0,0,.15)', '4', 'none');
+    tailTaper.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(tailTaper);
 
-    // Snake emoji on head
-    const he = mkText(p1.x, p1.y + 5, '🐍', '13');
-    svg.appendChild(he);
+    // ── Proper SVG snake head ──────────────────────────────────
+    // The head "looks" away from the body — direction from cp1 back to p1
+    const hDx  = p1.x - cp1x;
+    const hDy  = p1.y - cp1y;
+    const hLen = Math.sqrt(hDx * hDx + hDy * hDy) || 1;
+    const hAng = Math.atan2(hDy, hDx); // radians — direction head faces
+    const deg  = hAng * 180 / Math.PI;
+    const fx   = Math.cos(hAng);  // forward unit vector
+    const fy   = Math.sin(hAng);
+    const px2  = -fy;             // perpendicular unit vector
+    const py2  =  fx;
 
-    // Tail dot
-    const tc = mkCircle(p2.x, p2.y, 5, color, 'none', '0');
-    tc.setAttribute('opacity', '0.7');
-    svg.appendChild(tc);
+    // Darker shade for head
+    const headColor = shadeColor(color, -25);
+
+    // Head body — rounded ellipse pointing forward
+    const headEl = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    headEl.setAttribute('cx', p1.x + fx * 3);
+    headEl.setAttribute('cy', p1.y + fy * 3);
+    headEl.setAttribute('rx', '13');
+    headEl.setAttribute('ry', '9');
+    headEl.setAttribute('fill', headColor);
+    headEl.setAttribute('transform', `rotate(${deg}, ${p1.x + fx*3}, ${p1.y + fy*3})`);
+    svg.appendChild(headEl);
+
+    // Snout bump at the very tip
+    const snoutX = p1.x + fx * 14;
+    const snoutY = p1.y + fy * 14;
+    const snout  = mkCircle(snoutX, snoutY, 5, headColor, 'none', '0');
+    svg.appendChild(snout);
+
+    // Eyes — two white circles with dark pupils, offset sideways on the head
+    const eyeFwdDist = 7;
+    const eyeSideDist = 5;
+    [1, -1].forEach(side => {
+      const ex = p1.x + fx * eyeFwdDist + px2 * eyeSideDist * side;
+      const ey = p1.y + fy * eyeFwdDist + py2 * eyeSideDist * side;
+      // White sclera
+      svg.appendChild(mkCircle(ex, ey, 3.2, '#fff', 'none', '0'));
+      // Dark pupil
+      svg.appendChild(mkCircle(ex + fx * 0.5, ey + fy * 0.5, 1.8, '#1a1a2e', 'none', '0'));
+      // Shine dot
+      svg.appendChild(mkCircle(ex + fx * 0.8 - px2 * 0.6 * side, ey + fy * 0.8 - py2 * 0.6 * side, 0.8, '#fff', 'none', '0'));
+    });
+
+    // Forked tongue — two thin lines from snout tip
+    const tongueBaseX = p1.x + fx * 16;
+    const tongueBaseY = p1.y + fy * 16;
+    const tongueTipX  = p1.x + fx * 22;
+    const tongueTipY  = p1.y + fy * 22;
+    const fork = 3.5;
+    const tonguePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    tonguePath.setAttribute('d',
+      `M${tongueBaseX},${tongueBaseY} L${tongueTipX + px2*fork},${tongueTipY + py2*fork}` +
+      ` M${tongueBaseX},${tongueBaseY} L${tongueTipX - px2*fork},${tongueTipY - py2*fork}`
+    );
+    tonguePath.setAttribute('stroke', '#e53e3e');
+    tonguePath.setAttribute('stroke-width', '1.8');
+    tonguePath.setAttribute('fill', 'none');
+    tonguePath.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(tonguePath);
+  }
+
+  // Darken a hex colour by `amount` (0-100)
+  function shadeColor(hex, amount) {
+    const num = parseInt(hex.slice(1), 16);
+    const r   = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g   = Math.max(0, Math.min(255, ((num >> 8) & 0xff) + amount));
+    const b   = Math.max(0, Math.min(255, (num & 0xff) + amount));
+    return `rgb(${r},${g},${b})`;
   }
 
   /* ── Draw one ladder as rails + rungs ───────────────────────── */
@@ -201,10 +278,13 @@ const SnakesLadders = (() => {
       mkLine(svg, rx - nx * 1.5, ry - ny * 1.5, rx + nx * 1.5, ry + ny * 1.5, RUNG, '3');
     }
 
-    // Foot marker circle
-    const fc = mkCircle(p1.x, p1.y, 10, '#fef3c7', RAIL, '2');
+    // Foot marker — small gold circle at the base
+    const fc = mkCircle(p1.x, p1.y, 7, '#fef3c7', RAIL, '2');
     svg.appendChild(fc);
-    svg.appendChild(mkText(p1.x, p1.y + 5, '🪜', '12'));
+
+    // Top marker — small circle at the top
+    const tc = mkCircle(p2.x, p2.y, 7, '#fef3c7', RAIL, '2');
+    svg.appendChild(tc);
   }
 
   /* ── SVG helpers ────────────────────────────────────────────── */
@@ -230,14 +310,6 @@ const SnakesLadders = (() => {
     el.setAttribute('cx', cx); el.setAttribute('cy', cy);
     el.setAttribute('r', r);   el.setAttribute('fill', fill);
     el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
-    return el;
-  }
-  function mkText(x, y, txt, size) {
-    const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    el.setAttribute('x', x); el.setAttribute('y', y);
-    el.setAttribute('text-anchor', 'middle');
-    el.setAttribute('font-size', size);
-    el.textContent = txt;
     return el;
   }
 
