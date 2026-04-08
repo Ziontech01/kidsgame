@@ -255,27 +255,27 @@ const SnakesLadders = (() => {
     const dx  = p2.x - p1.x;
     const dy  = p2.y - p1.y;
     const len = Math.sqrt(dx * dx + dy * dy);
-    const nx  = -dy / len * 5.5;  // perpendicular offset for the two rails
-    const ny  =  dx / len * 5.5;
+    const nx  = -dy / len * 9;  // wider rail spacing
+    const ny  =  dx / len * 9;
 
     const RAIL  = '#92400e';
     const RUNG  = '#f59e0b';
 
     // Rail shadows
-    mkLine(svg, p1.x-nx+1, p1.y-ny+1, p2.x-nx+1, p2.y-ny+1, 'rgba(0,0,0,.18)', '7');
-    mkLine(svg, p1.x+nx+1, p1.y+ny+1, p2.x+nx+1, p2.y+ny+1, 'rgba(0,0,0,.18)', '7');
+    mkLine(svg, p1.x-nx+1.5, p1.y-ny+1.5, p2.x-nx+1.5, p2.y-ny+1.5, 'rgba(0,0,0,.22)', '11');
+    mkLine(svg, p1.x+nx+1.5, p1.y+ny+1.5, p2.x+nx+1.5, p2.y+ny+1.5, 'rgba(0,0,0,.22)', '11');
 
     // Left rail
-    mkLine(svg, p1.x-nx, p1.y-ny, p2.x-nx, p2.y-ny, RAIL, '4');
+    mkLine(svg, p1.x-nx, p1.y-ny, p2.x-nx, p2.y-ny, RAIL, '7');
     // Right rail
-    mkLine(svg, p1.x+nx, p1.y+ny, p2.x+nx, p2.y+ny, RAIL, '4');
+    mkLine(svg, p1.x+nx, p1.y+ny, p2.x+nx, p2.y+ny, RAIL, '7');
 
-    // 5 evenly-spaced rungs
-    for (let i = 1; i <= 5; i++) {
-      const t  = i / 6;
+    // 6 evenly-spaced rungs
+    for (let i = 1; i <= 6; i++) {
+      const t  = i / 7;
       const rx = p1.x + dx * t;
       const ry = p1.y + dy * t;
-      mkLine(svg, rx - nx * 1.5, ry - ny * 1.5, rx + nx * 1.5, ry + ny * 1.5, RUNG, '3');
+      mkLine(svg, rx - nx * 1.6, ry - ny * 1.6, rx + nx * 1.6, ry + ny * 1.6, RUNG, '5');
     }
 
     // Foot marker — small gold circle at the base
@@ -418,7 +418,7 @@ const SnakesLadders = (() => {
       if (isPlayer) playerPos = step; else compPos = step;
       updatePieces();
       highlightSquare(step);
-      await pause(400);
+      await pause(700);
     }
     clearHighlight();
 

@@ -707,7 +707,9 @@ tr:hover td{background:#fafbff}
   background:#fff;border-radius:var(--radius-sm);padding:12px 16px;
   box-shadow:var(--shadow);flex-wrap:wrap}
 .sl-player-card{display:flex;flex-direction:column;align-items:center;gap:4px}
-.sl-piece-big{font-size:2rem}
+.sl-piece-big{font-size:3rem;display:inline-flex;align-items:center;justify-content:center;
+  width:60px;height:60px;border-radius:50%;background:#fff;
+  border:3px solid #1a1a2e;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 .sl-pc-label{font-size:.78rem;font-weight:700;color:var(--gray)}
 .sl-dice-area{display:flex;flex-direction:column;align-items:center;gap:8px}
 .sl-dice{font-size:2.4rem;min-width:50px;text-align:center}
@@ -726,9 +728,12 @@ tr:hover td{background:#fafbff}
   font-weight:900;text-align:center;z-index:10;line-height:1.1;margin-top:10px}
 .sl-win-label{font-family:'Fredoka One',cursive;font-size:.55rem;color:#b45309;
   font-weight:900;text-align:center;z-index:10;line-height:1.1;margin-top:10px}
-.sl-pieces{display:flex;flex-wrap:wrap;justify-content:center;gap:1px;
+.sl-pieces{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;
   position:absolute;bottom:2px;left:0;right:0;z-index:5}
-.sl-piece{font-size:.9rem;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.sl-piece{font-size:1.35rem;line-height:1;display:inline-flex;align-items:center;
+  justify-content:center;width:24px;height:24px;border-radius:50%;
+  background:#fff;border:2.5px solid #1a1a2e;
+  box-shadow:0 2px 6px rgba(0,0,0,.45)}
 .sl-highlight{box-shadow:inset 0 0 0 3px #6366f1 !important;z-index:4}
 .sl-legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
   margin-top:12px;font-size:.82rem;color:var(--gray)}
