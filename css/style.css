@@ -715,20 +715,21 @@ tr:hover td{background:#fafbff}
   background:#f9fafb;border-radius:8px;margin-top:8px;min-height:36px}
 .sl-board{display:grid;grid-template-columns:repeat(10,1fr);
   width:min(600px,calc(100vw - 24px));margin:0 auto;
-  border:2px solid #374151;border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  border:3px solid #374151;border-radius:10px;overflow:hidden;
+  box-shadow:var(--shadow);position:relative}
 .sl-cell{position:relative;aspect-ratio:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:.7rem;
-  border:1px solid rgba(0,0,0,.08);padding:1px;overflow:hidden;user-select:none}
-.sl-light{background:#f8fafc}
-.sl-dark{background:#e2e8f0}
-.sl-has-snake{background:#fee2e2;border-color:#dc2626;border-width:2px}
-.sl-has-ladder{background:#dcfce7;border-color:#16a34a;border-width:2px}
-.sl-num{font-size:.7rem;font-weight:800;color:#1f2937;position:absolute;
+  border:1px solid rgba(0,0,0,.1);padding:1px;overflow:visible;user-select:none}
+.sl-num{font-size:.62rem;font-weight:800;color:rgba(0,0,0,.5);position:absolute;
   top:2px;left:2px;line-height:1;z-index:10}
-.sl-icon{font-size:1.4rem;margin-top:2px}
-.sl-pieces{display:flex;flex-wrap:wrap;justify-content:center;gap:1px;margin-top:1px}
-.sl-piece{font-size:.85rem;line-height:1}
-.sl-highlight{box-shadow:inset 0 0 0 3px #6366f1 !important}
+.sl-start-label{font-family:'Fredoka One',cursive;font-size:.55rem;color:#0e7490;
+  font-weight:900;text-align:center;z-index:10;line-height:1.1;margin-top:10px}
+.sl-win-label{font-family:'Fredoka One',cursive;font-size:.55rem;color:#b45309;
+  font-weight:900;text-align:center;z-index:10;line-height:1.1;margin-top:10px}
+.sl-pieces{display:flex;flex-wrap:wrap;justify-content:center;gap:1px;
+  position:absolute;bottom:2px;left:0;right:0;z-index:5}
+.sl-piece{font-size:.9rem;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+.sl-highlight{box-shadow:inset 0 0 0 3px #6366f1 !important;z-index:4}
 .sl-legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
   margin-top:12px;font-size:.82rem;color:var(--gray)}
 
@@ -1017,12 +1018,8 @@ tr:hover td{background:#fafbff}
 .sl-last-roll{font-size:1rem;font-weight:800;color:var(--dark);min-height:1.4rem}
 .sl-status{text-align:center;font-weight:700;font-size:.88rem;padding:6px 10px;
   background:#f9fafb;border-radius:8px;min-height:32px;width:100%}
-/* Colorful board cells */
-.sl-has-snake{background:#fff1f0 !important;border-color:#fca5a5 !important}
-.sl-has-ladder{background:#f0fdf4 !important;border-color:#86efac !important}
-.sl-num{font-size:.58rem;font-weight:800;color:rgba(0,0,0,.55);position:absolute;
+.sl-num{font-size:.52rem;font-weight:800;color:rgba(0,0,0,.45);position:absolute;
   top:1px;left:2px;line-height:1}
-.sl-icon{font-size:1rem;margin-top:2px}
 .sl-cell:hover{filter:brightness(.93);cursor:default}
 
 /* ── Bible Quiz: new BQ classes ───────────────────────── */
