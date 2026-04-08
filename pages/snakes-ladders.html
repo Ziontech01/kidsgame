@@ -28,51 +28,41 @@
 
 <!-- Main layout -->
 <div class="sl-page">
+  <div class="sl-game-area">
 
-  <!-- Player cards + controls -->
-  <div class="sl-top">
-    <div class="sl-players-bar">
-
-      <!-- You (left) -->
-      <div class="sl-player-card sl-you-card" id="sl-pc-you">
-        <span class="sl-piece-big">🔵</span>
-        <span class="sl-pc-label">You</span>
-        <div class="sl-dice-sm" id="sl-dice-you">🎲</div>
-        <div class="sl-last-roll-label">Last roll</div>
-        <div class="sl-last-roll" id="sl-you-roll">—</div>
-      </div>
-
-      <!-- Center control -->
-      <div class="sl-center-ctrl">
-        <button class="btn btn-primary btn-lg sl-roll-btn" id="sl-roll-btn" onclick="SnakesLadders.rollDice()">
-          🎲 Roll Dice
-        </button>
-        <div class="sl-status" id="sl-status">Loading…</div>
-      </div>
-
-      <!-- Computer (right) -->
-      <div class="sl-player-card sl-comp-card" id="sl-pc-comp">
-        <span class="sl-piece-big">🔴</span>
-        <span class="sl-pc-label">Computer</span>
-        <div class="sl-dice-sm" id="sl-dice-comp">🎲</div>
-        <div class="sl-last-roll-label">Last roll</div>
-        <div class="sl-last-roll" id="sl-comp-roll">—</div>
-      </div>
-
+    <!-- LEFT PANEL — You -->
+    <div class="sl-side-panel sl-you-panel">
+      <div class="sl-panel-piece">🔵</div>
+      <div class="sl-panel-name">You</div>
+      <div class="sl-dice-sm" id="sl-dice-you">🎲</div>
+      <div class="sl-last-roll-label">Last Roll</div>
+      <div class="sl-last-roll" id="sl-you-roll">—</div>
+      <button class="btn btn-primary sl-roll-btn" id="sl-roll-btn" onclick="SnakesLadders.rollDice()">
+        🎲 Roll!
+      </button>
     </div>
+
+    <!-- CENTER — Board + status + legend -->
+    <div class="sl-board-area">
+      <div class="sl-status" id="sl-status">Loading…</div>
+      <div class="sl-board" id="sl-board"></div>
+      <div class="sl-legend">
+        <span>🐍 Snake = go down</span>
+        <span>🪜 Ladder = go up</span>
+        <span>🔵 You &nbsp; 🔴 Computer</span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL — Computer -->
+    <div class="sl-side-panel sl-comp-panel">
+      <div class="sl-panel-piece">🔴</div>
+      <div class="sl-panel-name">Computer</div>
+      <div class="sl-dice-sm" id="sl-dice-comp">🎲</div>
+      <div class="sl-last-roll-label">Last Roll</div>
+      <div class="sl-last-roll" id="sl-comp-roll">—</div>
+    </div>
+
   </div>
-
-  <!-- Game board (10×10 CSS grid) -->
-  <div class="sl-board" id="sl-board"></div>
-
-  <!-- Legend -->
-  <div class="sl-legend">
-    <span>🐍 Snake = go down</span>
-    <span>🪜 Ladder = go up</span>
-    <span>🔵 You &nbsp; 🔴 Computer</span>
-    <span>🏁 Start &nbsp; 🏆 Win!</span>
-  </div>
-
 </div>
 
 <!-- End-game overlay -->

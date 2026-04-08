@@ -9,17 +9,17 @@ const SnakesLadders = (() => {
   // Ladders: foot (low) → top (high)
   const LADDERS = { 4:14, 9:31, 20:38, 28:84, 40:59, 51:67, 63:81, 71:91 };
 
-  // One distinct colour per snake — vibrant, attractive palette
+  // One distinct colour per snake — NO blue or red (reserved for player pieces)
   const SNAKE_COLORS = [
-    '#e53e3e',  // ruby red
     '#38a169',  // forest green
-    '#3182ce',  // sky blue
     '#dd6b20',  // burnt orange
     '#805ad5',  // violet
     '#319795',  // teal
     '#d53f8c',  // hot pink
     '#d69e2e',  // golden
-    '#2b6cb0'   // royal blue
+    '#0f766e',  // dark teal
+    '#a16207',  // dark amber
+    '#9d174d'   // deep magenta
   ];
 
   /* ── State ─────────────────────────────────────────────────── */
@@ -31,15 +31,15 @@ const SnakesLadders = (() => {
   let startTime  = null;
   let totalMoves = 0;
 
-  /* ── Vibrant cycling tile palette ──────────────────────────── */
+  /* ── Vibrant cycling tile palette — NO blue or red ─────────── */
   const CELL_COLORS = [
     '#ffc0cb',  // pink
     '#ffd59e',  // peach
     '#fff176',  // yellow
     '#a8e6cf',  // mint green
-    '#b3d9ff',  // sky blue
+    '#fde68a',  // warm amber
     '#ddb3ff',  // lavender
-    '#ffb3b3',  // coral
+    '#d9f99d',  // lime green
     '#b3f0ee'   // aqua
   ];
 

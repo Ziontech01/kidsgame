@@ -701,7 +701,7 @@ tr:hover td{background:#fafbff}
 .lang-quiz-en{font-size:1.6rem;font-weight:900;color:var(--dark)}
 
 /* ── Snakes & Ladders ──────────────────────────────────── */
-.sl-page{max-width:660px;margin:0 auto;padding:16px 12px 40px}
+.sl-page{max-width:960px;margin:0 auto;padding:16px 12px 40px}
 .sl-top{margin-bottom:12px}
 .sl-players-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;
   background:#fff;border-radius:var(--radius-sm);padding:12px 16px;
@@ -1008,21 +1008,34 @@ tr:hover td{background:#fafbff}
 .tt-explain{font-size:.82rem;margin-top:6px;font-weight:600;opacity:.85}
 .feedback-bar .tt-explain{display:block;margin-top:6px;font-style:italic;font-size:.8rem}
 
-/* ── Snakes & Ladders: per-player dice + colorful board ── */
-.sl-players-bar{display:flex;align-items:stretch;justify-content:space-between;gap:8px;
-  background:#fff;border-radius:var(--radius-sm);padding:12px;
-  box-shadow:var(--shadow);margin-bottom:10px}
-.sl-you-card,.sl-comp-card{display:flex;flex-direction:column;align-items:center;
-  gap:4px;padding:8px 10px;border-radius:12px;min-width:80px;transition:background .3s}
-.sl-you-card{background:#eff6ff}
-.sl-comp-card{background:#fff1f2}
-.sl-center-ctrl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;flex:1}
+/* ── Snakes & Ladders: side-panel layout ── */
+.sl-page{max-width:960px !important;padding:16px 12px 40px}
+.sl-game-area{display:flex;align-items:flex-start;gap:14px}
+.sl-side-panel{width:130px;flex-shrink:0;border-radius:18px;padding:18px 10px;
+  text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.1);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  position:sticky;top:80px}
+.sl-you-panel{background:linear-gradient(160deg,#eff6ff,#dbeafe);border:2px solid #bfdbfe}
+.sl-comp-panel{background:linear-gradient(160deg,#fff1f2,#ffe4e6);border:2px solid #fecdd3}
+.sl-panel-piece{font-size:3rem;display:flex;align-items:center;justify-content:center;
+  width:64px;height:64px;border-radius:50%;background:#fff;
+  border:3px solid #1a1a2e;box-shadow:0 4px 12px rgba(0,0,0,.2);margin:0 auto}
+.sl-panel-name{font-family:'Fredoka One',cursive;font-size:1.15rem;color:#1a1a2e}
+.sl-roll-btn{width:100%;font-size:.88rem !important;padding:10px 6px !important}
+.sl-board-area{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
 .sl-dice-sm{font-size:2.2rem;line-height:1;min-height:2.4rem;text-align:center}
-.sl-last-roll-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;
+.sl-last-roll-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;
   color:var(--gray);font-weight:700}
 .sl-last-roll{font-size:1rem;font-weight:800;color:var(--dark);min-height:1.4rem}
 .sl-status{text-align:center;font-weight:700;font-size:.88rem;padding:6px 10px;
-  background:#f9fafb;border-radius:8px;min-height:32px;width:100%}
+  background:#f9fafb;border-radius:8px;min-height:32px;width:100%;margin-bottom:8px}
+@media(max-width:640px){
+  .sl-game-area{flex-direction:column;align-items:stretch}
+  .sl-side-panel{width:100%;flex-direction:row;position:static;padding:12px 16px;
+    justify-content:space-around;gap:8px;flex-wrap:wrap}
+  .sl-panel-piece{width:48px;height:48px;font-size:2.2rem}
+  .sl-roll-btn{width:auto}
+}
 .sl-num{font-size:.52rem;font-weight:800;color:rgba(0,0,0,.45);position:absolute;
   top:1px;left:2px;line-height:1}
 .sl-cell:hover{filter:brightness(.93);cursor:default}
