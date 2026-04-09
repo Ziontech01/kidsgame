@@ -85,6 +85,9 @@ const LudoGame = (() => {
     red:    { emoji: '🔴', label: 'Red',    css: '#991b1b' }
   };
 
+  // Token icons — assigned by player slot index
+  const TOKENS = ['🐻','🐰','🚗','🦖','🤖','🐕','🦄','👾'];
+
   /* ── State ──────────────────────────────────────────────────── */
   let state = {};
 
@@ -97,6 +100,8 @@ const LudoGame = (() => {
     // Reset dice display
     const diceEl = document.getElementById('ludo-dice-val');
     if (diceEl) diceEl.textContent = '🎲';
+    const diceEl2 = document.getElementById('ludo-dice-val-2');
+    if (diceEl2) diceEl2.textContent = '🎲';
     renderSetup();
   }
 
@@ -138,6 +143,26 @@ const LudoGame = (() => {
           </button>
         </div>
 
+        <div style="margin-top:18px">
+          <div class="ludo-setup-divider">Game Mode</div>
+          <div class="ludo-gamemode-btns">
+            <button class="ludo-gamemode-btn selected" id="ludo-gm-kids"
+                    onclick="LudoGame._selectGameMode('kids')">
+              <span class="ludo-gamemode-icon">🌟</span>
+              <span class="ludo-gamemode-label">Kids Mode</span>
+              <span class="ludo-gamemode-sub">✅ Enter on 1 or 6</span>
+              <span class="ludo-gamemode-rec">Recommended ages 5–8!</span>
+            </button>
+            <button class="ludo-gamemode-btn" id="ludo-gm-classic"
+                    onclick="LudoGame._selectGameMode('classic')">
+              <span class="ludo-gamemode-icon">🎯</span>
+              <span class="ludo-gamemode-label">Classic Mode</span>
+              <span class="ludo-gamemode-sub">Enter on 6 only</span>
+              <span class="ludo-gamemode-rec">&nbsp;</span>
+            </button>
+          </div>
+        </div>
+
         <div id="ludo-name-section" style="display:none">
           <div class="ludo-setup-divider">Enter Player Names</div>
           <div id="ludo-name-inputs"></div>
@@ -162,8 +187,20 @@ const LudoGame = (() => {
         </div>
       </div>`;
 
-    // Store logged-in name for auto-fill
+    // Store defaults
     setupEl._loggedName = loggedName;
+    setupEl._gameMode   = 'kids';
+  }
+
+  function _selectGameMode(mode) {
+    window.SFX?.play('click');
+    const setupEl = document.getElementById('ludo-setup');
+    if (setupEl) setupEl._gameMode = mode;
+
+    const kBtn = document.getElementById('ludo-gm-kids');
+    const cBtn = document.getElementById('ludo-gm-classic');
+    if (kBtn) kBtn.classList.toggle('selected', mode === 'kids');
+    if (cBtn) cBtn.classList.toggle('selected', mode === 'classic');
   }
 
   function _selectMode(mode) {
@@ -220,9 +257,10 @@ const LudoGame = (() => {
 
   function _startGame() {
     window.SFX?.play('click');
-    const setupEl = document.getElementById('ludo-setup');
-    const mode    = setupEl?._mode;
-    const slots   = setupEl?._slots;
+    const setupEl  = document.getElementById('ludo-setup');
+    const mode     = setupEl?._mode;
+    const slots    = setupEl?._slots;
+    const gameMode = setupEl?._gameMode || 'kids';
     if (!mode || !slots) return;
 
     // Build player array
@@ -244,7 +282,7 @@ const LudoGame = (() => {
     const gameArea = document.getElementById('ludo-game-area');
     if (gameArea) gameArea.style.display = 'block';
 
-    _startGameState(players);
+    _startGameState(players, gameMode);
   }
 
   function _updateLabels(players) {
@@ -275,7 +313,7 @@ const LudoGame = (() => {
   /* ════════════════════════════════════════════════════════════
      GAME STATE
   ════════════════════════════════════════════════════════════ */
-  function _startGameState(players) {
+  function _startGameState(players, gameMode) {
     const pieces = {};
     ['blue','yellow','green','red'].forEach(c => { pieces[c] = [-1,-1,-1,-1]; });
 
@@ -289,8 +327,21 @@ const LudoGame = (() => {
       moving:   false,
       over:     false,
       startTime:  Date.now(),
-      totalMoves: 0
+      totalMoves: 0,
+      gameMode: gameMode || 'kids'
     };
+
+    // Update mode badge and legend
+    const badge = document.getElementById('ludo-mode-badge');
+    if (badge) {
+      badge.textContent = state.gameMode === 'kids' ? '🌟 Kids Mode' : '🎯 Classic';
+    }
+    const legendEntry = document.getElementById('ludo-legend-entry');
+    if (legendEntry) {
+      legendEntry.textContent = state.gameMode === 'kids'
+        ? '🌟 Enter on 1 or 6!'
+        : '🎯 Roll 6 to enter!';
+    }
 
     buildBoard();
     renderPieces();
@@ -299,6 +350,8 @@ const LudoGame = (() => {
 
     const cp = _cp();
     _setDiceColor(cp.colors[0]);
+    _highlightActiveHome(cp.colors[0]);
+
     if (cp.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
       setTimeout(computerTurn, 900);
@@ -311,6 +364,20 @@ const LudoGame = (() => {
   // shorthand helpers
   function _cp()     { return state.players[state.turnIdx]; }
   function _pEmoji(p){ return p.colors.map(c => COLOR_CONFIG[c].emoji).join(''); }
+
+  /* ════════════════════════════════════════════════════════════
+     ACTIVE HOME HIGHLIGHT
+  ════════════════════════════════════════════════════════════ */
+  function _highlightActiveHome(color) {
+    // Remove from all
+    ['blue','yellow','green','red'].forEach(c => {
+      document.querySelectorAll(`.lc-home-${c}`).forEach(el => el.classList.remove('lc-home-active'));
+    });
+    // Add to current
+    if (color) {
+      document.querySelectorAll(`.lc-home-${color}`).forEach(el => el.classList.add('lc-home-active'));
+    }
+  }
 
   /* ════════════════════════════════════════════════════════════
      BUILD 15×15 BOARD
@@ -444,7 +511,9 @@ const LudoGame = (() => {
     if (!cell) return;
     const token = document.createElement('div');
     token.className = `lc-piece lc-piece-${color}`;
-    token.textContent = pi + 1;
+    // Show token icon inside piece
+    const tok = TOKENS[Object.keys(COLOR_CONFIG).indexOf(color) % TOKENS.length];
+    token.innerHTML = `<span style="font-size:.55em;line-height:1">${tok}</span>`;
     const owner = state.players?.find(p => p.colors.includes(color));
     token.title = `${owner?.name || color} — piece ${pi + 1}`;
     if (clickable) {
@@ -507,7 +576,9 @@ const LudoGame = (() => {
     const cp      = _cp();
     const ce      = COLOR_CONFIG[color].emoji;
 
-    if (pos === -1 && die === 6) {
+    const canEnter = state.gameMode === 'kids' ? (die === 1 || die === 6) : die === 6;
+
+    if (pos === -1 && canEnter) {
       // Enter the board
       pieces[pi] = 0;
       renderPieces();
@@ -557,6 +628,7 @@ const LudoGame = (() => {
       // Rolled 6 — same player goes again
       const cp = _cp();
       _setDiceColor(cp.colors[0]);
+      _highlightActiveHome(cp.colors[0]);
       if (cp.isComputer) {
         setStatus('🤖 Computer rolled 6 — goes again!', 'gray');
         setTimeout(computerTurn, 700);
@@ -571,6 +643,7 @@ const LudoGame = (() => {
     state.turnIdx = (state.turnIdx + 1) % state.players.length;
     const next = _cp();
     _setDiceColor(next.colors[0]);
+    _highlightActiveHome(next.colors[0]);
 
     if (next.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
@@ -655,10 +728,20 @@ const LudoGame = (() => {
         if ((COLOR_ENTRY[victimColor] + vp) % 56 === moverAbs) {
           state.pieces[victimColor][vi] = -1;
           window.SFX?.play('opponent_move');
+
+          // Enhanced capture message
           setStatus(
-            `💥 ${COLOR_CONFIG[moverColor].emoji} captured ${COLOR_CONFIG[victimColor].emoji}! Sent home.`,
+            `💥 ${COLOR_CONFIG[moverColor].emoji} got one! ${COLOR_CONFIG[victimColor].emoji} Back to home! 🏠`,
             moverColor
           );
+
+          // Brief flash on the current cell
+          const [flashCol, flashRow] = MAIN_TRACK[moverAbs];
+          const flashCell = document.getElementById(`lc-${flashCol}-${flashRow}`);
+          if (flashCell) {
+            flashCell.classList.add('lc-capture-flash');
+            setTimeout(() => flashCell.classList.remove('lc-capture-flash'), 600);
+          }
         }
       });
     });
@@ -702,11 +785,27 @@ const LudoGame = (() => {
         `<span>Moves: ${state.totalMoves}</span><span>Time: ${timeStr}</span>`;
     }
 
+    // Confetti!
+    if (isHuman) confettiEffect();
+
     if (isHuman) {
       await saveResult({
         gameType: 'ludo', outcome: 'win', level: 'all',
         moves: state.totalMoves, duration: elapsed, timeStr
       });
+    }
+  }
+
+  function confettiEffect() {
+    const colors = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7','#ec4899'];
+    for (let i = 0; i < 35; i++) {
+      const el = document.createElement('div');
+      el.style.cssText = `position:fixed;width:10px;height:10px;border-radius:2px;
+        left:${Math.random()*100}vw;top:-10px;z-index:9999;pointer-events:none;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation:ludoConfetti ${1.5+Math.random()*2}s linear ${Math.random()*1}s forwards`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
     }
   }
 
@@ -716,7 +815,9 @@ const LudoGame = (() => {
   function getMoveable(color, die) {
     return state.pieces[color].reduce((acc, pos, pi) => {
       if (pos === 60) return acc;
-      if (pos === -1 && die === 6)  { acc.push(pi); return acc; }
+      // Enter board: Kids Mode allows 1 or 6, Classic allows only 6
+      const canEnter = state.gameMode === 'kids' ? (die === 1 || die === 6) : die === 6;
+      if (pos === -1 && canEnter) { acc.push(pi); return acc; }
       if (pos === -1) return acc;
       if (pos + die <= 59) acc.push(pi);
       return acc;
@@ -796,7 +897,14 @@ const LudoGame = (() => {
 
   function enableRoll(on) {
     const btn = document.getElementById('ludo-roll-btn');
-    if (btn) { btn.disabled = !on; btn.style.opacity = on ? '1' : '0.45'; }
+    if (btn) {
+      btn.disabled = !on;
+      btn.style.opacity = on ? '1' : '0.45';
+      if (on) {
+        const cp = _cp();
+        btn.textContent = `🎲 ${cp ? cp.name + "'s Roll!" : 'Roll Dice!'}`;
+      }
+    }
   }
 
   function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -825,5 +933,5 @@ const LudoGame = (() => {
     }
   }
 
-  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame, _startVsFriend, _setDiceColor };
+  return { init, rollDice, restartGame, _selectPiece, _selectMode, _selectGameMode, _startGame, _startVsFriend, _setDiceColor };
 })();

@@ -3,11 +3,289 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Happy Games – Snakes &amp; Ladders</title>
+  <title>Happy Games – Snakes &amp; Ladders Adventure</title>
   <link rel="stylesheet" href="../css/style.css"/>
+  <style>
+    /* ── Rainbow Jungle decorations ─────────────────────────────── */
+    .sl-jungle-wrap {
+      position: relative;
+      display: inline-block;
+      margin: 0 auto;
+    }
+    .sl-deco {
+      position: absolute;
+      font-size: 1.6rem;
+      pointer-events: none;
+      opacity: 0.6;
+      z-index: 0;
+    }
+    .sl-deco-1 { top: -24px; left: 5%;   animation: slFloat 4s ease-in-out infinite; }
+    .sl-deco-2 { top: -20px; left: 25%;  animation: slFloat 5s ease-in-out infinite 0.5s; }
+    .sl-deco-3 { top: -22px; right: 10%; animation: slFloat 4.5s ease-in-out infinite 1s; }
+    .sl-deco-4 { bottom: -24px; left: 10%;  animation: slFloat 5s ease-in-out infinite 0.3s; }
+    .sl-deco-5 { bottom: -20px; right: 20%; animation: slFloat 4.2s ease-in-out infinite 0.8s; }
+    .sl-deco-6 { top: 40%; right: -28px; animation: slFloat 4.8s ease-in-out infinite 1.2s; }
+    @keyframes slFloat {
+      0%, 100% { transform: translateY(0) rotate(-3deg); }
+      50%       { transform: translateY(-8px) rotate(3deg); }
+    }
+
+    /* ── Players bar ─────────────────────────────────────────────── */
+    .sl-players-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 10px 16px;
+      max-width: 720px;
+      margin: 0 auto 8px;
+    }
+    .sl-player-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 10px 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      border: 3px solid transparent;
+      transition: all .25s;
+      min-width: 90px;
+    }
+    .sl-player-card--active {
+      border-color: #6366f1;
+      box-shadow: 0 4px 20px rgba(99,102,241,.4);
+      transform: translateY(-3px);
+    }
+    .sl-player-card--winner {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg,#fef9c3,#fefce8);
+    }
+    .sl-player-token { font-size: 2rem; line-height: 1; }
+    .sl-player-name  { font-family: 'Fredoka One', cursive; font-size: .82rem; color: #1a1a2e; }
+    .sl-player-sq    { font-size: .72rem; font-weight: 700; color: #6b7280; }
+    .sl-player-dice  { font-size: 2.2rem; line-height: 1; min-height: 2.4rem; display: inline-block; }
+
+    /* ── Big roll button ─────────────────────────────────────────── */
+    .sl-roll-main-btn {
+      padding: 16px 40px;
+      font-size: 1.15rem;
+      box-shadow: 0 6px 20px rgba(255,107,107,.5);
+    }
+    .sl-roll-main-btn:disabled { opacity: .5; transform: none; box-shadow: none; }
+
+    /* ── Setup screen ────────────────────────────────────────────── */
+    .sl-setup-wrap {
+      max-width: 520px;
+      margin: 20px auto;
+      padding: 0 16px 40px;
+    }
+    .sl-setup-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.12);
+      text-align: center;
+    }
+    .sl-setup-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.9rem;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+    .sl-setup-subtitle {
+      font-size: .95rem;
+      font-weight: 700;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .sl-mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .sl-mode-btn {
+      border: 3px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 14px 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: 'Nunito', sans-serif;
+    }
+    .sl-mode-btn:hover { border-color: #6366f1; background: #f5f3ff; }
+    .sl-mode-btn.sl-mode-selected { border-color: #6366f1; background: #ede9fe; }
+    .sl-mode-icon  { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+    .sl-mode-label { font-weight: 800; font-size: .92rem; color: #1a1a2e; display: block; }
+    .sl-mode-desc  { font-size: .75rem; color: #6b7280; font-weight: 600; display: block; }
+
+    .sl-name-section { margin-top: 18px; text-align: left; }
+    .sl-name-section-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1rem;
+      color: #374151;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .sl-name-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .sl-name-color-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .sl-name-input {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-size: .92rem;
+      font-weight: 700;
+    }
+    .sl-name-input:focus { outline: none; border-color: #6366f1; }
+    .sl-token-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+      width: 100%;
+    }
+    .sl-token-btn {
+      font-size: 1.4rem;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      border: 2px solid #e5e7eb;
+      background: #f9fafb;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sl-token-btn:hover  { border-color: #6366f1; background: #ede9fe; }
+    .sl-token-btn.active { border-color: #6366f1; background: #ede9fe; transform: scale(1.15); }
+
+    .sl-setup-divider {
+      font-weight: 800;
+      font-size: .82rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 16px 0 10px;
+    }
+    .sl-start-btn { width: 100%; margin-top: 16px; }
+
+    /* ── Board picker in setup ───────────────────────────────────── */
+    .sl-board-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    .sl-board-pick-btn {
+      padding: 9px 14px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: all .18s;
+      font-family: 'Nunito', sans-serif;
+      border: 2px solid #d1d5db;
+      background: #fff;
+      color: #374151;
+    }
+    .sl-board-pick-btn.active {
+      border-color: #6366f1;
+      background: #ede9fe;
+      color: #4f46e5;
+    }
+    .sl-board-info {
+      font-size: .75rem;
+      color: #6b7280;
+      font-weight: 600;
+      margin: 2px 0 6px;
+    }
+
+    /* ── Game screen layout ──────────────────────────────────────── */
+    .sl-game-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 12px 32px;
+    }
+    .sl-status {
+      text-align: center;
+      font-weight: 700;
+      font-size: .92rem;
+      padding: 8px 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin: 4px auto 8px;
+      min-height: 36px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    /* ── Confetti for win ────────────────────────────────────────── */
+    @keyframes slConfetti {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+    }
+    .sl-confetti-piece {
+      position: fixed;
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 9999;
+      animation: slConfetti linear forwards;
+    }
+
+    /* ── End overlay extras ──────────────────────────────────────── */
+    .sl-end-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .sl-end-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 36px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .sl-end-icon  { font-size: 4rem; margin-bottom: 12px; }
+    .sl-end-title { font-family: 'Fredoka One', cursive; font-size: 2rem; color: #1a1a2e; margin-bottom: 8px; }
+    .sl-end-msg   { font-size: 1rem; color: #4b5563; margin-bottom: 8px; font-weight: 600; }
+    .sl-end-stats {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      font-size: .88rem;
+      font-weight: 700;
+      color: #6b7280;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);min-height:100vh">
 
+<!-- Loading overlay -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-spinner">
     <div style="font-size:3rem;margin-bottom:12px">🐍🪜</div>
@@ -16,6 +294,7 @@
   </div>
 </div>
 
+<!-- Navbar -->
 <nav class="navbar">
   <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
   <div class="nav-links">
@@ -26,43 +305,46 @@
   </div>
 </nav>
 
-<!-- Main layout -->
-<div class="sl-page">
-  <div class="sl-game-area">
+<!-- Setup screen -->
+<div id="sl-setup" style="display:none"></div>
 
-    <!-- LEFT PANEL — You -->
-    <div class="sl-side-panel sl-you-panel">
-      <div class="sl-panel-piece">🔵</div>
-      <div class="sl-panel-name">You</div>
-      <div class="sl-dice-sm" id="sl-dice-you">🎲</div>
-      <div class="sl-last-roll-label">Last Roll</div>
-      <div class="sl-last-roll" id="sl-you-roll">—</div>
-      <button class="btn btn-primary sl-roll-btn" id="sl-roll-btn" onclick="SnakesLadders.rollDice()">
-        🎲 Roll!
-      </button>
-      <button class="btn btn-secondary sl-roll-btn" onclick="SnakesLadders._startVsFriend()" style="margin-top:8px;font-size:.82rem">
-        🤝 vs Friend
-      </button>
-    </div>
+<!-- Game screen -->
+<div id="sl-game" style="display:none">
+  <div class="sl-game-wrap">
 
-    <!-- CENTER — Board + status + legend -->
-    <div class="sl-board-area">
-      <div class="sl-status" id="sl-status">Loading…</div>
+    <!-- Players bar -->
+    <div class="sl-players-bar" id="sl-players-bar"></div>
+
+    <!-- Status message -->
+    <div class="sl-status" id="sl-status"></div>
+
+    <!-- Board area with jungle decorations -->
+    <div class="sl-jungle-wrap">
+      <div class="sl-deco sl-deco-1">☁️</div>
+      <div class="sl-deco sl-deco-2">⭐</div>
+      <div class="sl-deco sl-deco-3">🌿</div>
+      <div class="sl-deco sl-deco-4">🌸</div>
+      <div class="sl-deco sl-deco-5">☁️</div>
+      <div class="sl-deco sl-deco-6">⭐</div>
       <div class="sl-board" id="sl-board"></div>
-      <div class="sl-legend">
-        <span>🐍 Snake = go down</span>
-        <span>🪜 Ladder = go up</span>
-        <span>🔵 You &nbsp; 🔴 Computer</span>
-      </div>
     </div>
 
-    <!-- RIGHT PANEL — Computer -->
-    <div class="sl-side-panel sl-comp-panel">
-      <div class="sl-panel-piece">🔴</div>
-      <div class="sl-panel-name">Computer</div>
-      <div class="sl-dice-sm" id="sl-dice-comp">🎲</div>
-      <div class="sl-last-roll-label">Last Roll</div>
-      <div class="sl-last-roll" id="sl-comp-roll">—</div>
+    <!-- Legend -->
+    <div class="sl-legend">
+      <span>🐍 Snake = go down</span>
+      <span>🪜 Ladder = go up</span>
+    </div>
+
+    <!-- Roll button (large, centered) -->
+    <div style="text-align:center;margin:12px 0">
+      <button class="btn btn-primary btn-lg sl-roll-main-btn" id="sl-roll-btn"
+              onclick="SnakesLadders.rollDice()" disabled>
+        🎲 Roll the Dice!
+      </button>
+      <div style="margin-top:8px">
+        <button class="btn btn-secondary" style="font-size:.82rem"
+                onclick="SnakesLadders._startVsFriend()">🤝 vs Friend Online</button>
+      </div>
     </div>
 
   </div>
@@ -72,7 +354,7 @@
 <div class="sl-end-overlay" id="sl-end" style="display:none">
   <div class="sl-end-card">
     <div class="sl-end-icon" id="sl-end-icon">🏆</div>
-    <div class="sl-end-title" id="sl-end-title">You Win!</div>
+    <div class="sl-end-title" id="sl-end-title">Winner!</div>
     <div class="sl-end-msg" id="sl-end-msg"></div>
     <div class="sl-end-stats" id="sl-end-stats"></div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
@@ -90,7 +372,7 @@
 <script src="../js/sound.js"></script>
 <script src="../js/snakes-ladders.js"></script>
 <script>
-softAuth(() => { SnakesLadders.init(); });
+  softAuth(() => { SnakesLadders.init(); });
 </script>
 </body>
 </html>
