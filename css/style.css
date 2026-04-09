@@ -728,8 +728,8 @@ tr:hover td{background:#fafbff}
   font-weight:900;text-align:center;z-index:10;line-height:1.1;margin-top:10px}
 .sl-win-label{font-family:'Fredoka One',cursive;font-size:.55rem;color:#b45309;
   font-weight:900;text-align:center;z-index:10;line-height:1.1;margin-top:10px}
-.sl-pieces{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;
-  position:absolute;bottom:2px;left:0;right:0;z-index:5}
+.sl-pieces{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;
+  position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);z-index:5}
 .sl-piece{font-size:1.35rem;line-height:1;display:inline-flex;align-items:center;
   justify-content:center;width:24px;height:24px;border-radius:50%;
   background:#fff;border:2.5px solid #1a1a2e;
@@ -766,6 +766,23 @@ tr:hover td{background:#fafbff}
 .sl-has-ladder .sl-icon { animation: ladderShake 1s ease-in-out infinite; }
 .sl-piece.sliding-snake { animation: snakeSlide 2s ease-in-out forwards; }
 .sl-piece.climbing-ladder { animation: ladderClimb 1.5s ease-in-out forwards; }
+
+/* Dice roll animation */
+@keyframes diceShake {
+  0%   { transform: rotate(-18deg) scale(1.2);  }
+  15%  { transform: rotate(16deg)  scale(1.25); }
+  30%  { transform: rotate(-14deg) scale(1.18); }
+  45%  { transform: rotate(12deg)  scale(1.22); }
+  60%  { transform: rotate(-10deg) scale(1.16); }
+  75%  { transform: rotate(8deg)   scale(1.2);  }
+  90%  { transform: rotate(-6deg)  scale(1.15); }
+  100% { transform: rotate(5deg)   scale(1.18); }
+}
+.dice-rolling {
+  animation: diceShake 0.22s ease-in-out infinite;
+  transform-origin: center;
+  cursor: default;
+}
 
 .sl-has-snake .sl-num { color: #991b1b; font-weight: bold; }
 .sl-has-ladder .sl-num { color: #15803d; font-weight: bold; }
@@ -834,7 +851,14 @@ tr:hover td{background:#fafbff}
   box-shadow:var(--shadow);margin-bottom:12px}
 /* player-info bar filled dynamically by JS — see .ludo-pinfo-* below */
 .ludo-dice-area{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
-.ludo-dice{font-size:2.4rem;min-width:50px;text-align:center}
+.ludo-dice-split{display:flex;gap:10px;align-items:center;justify-content:center;
+  padding:10px 14px;border-radius:18px;border:3px solid #e5e7eb;background:#f9fafb;
+  transition:border-color .3s,background .3s}
+.ludo-dice-split.ludo-dice-blue  {border-color:#1e40af;background:#eff6ff}
+.ludo-dice-split.ludo-dice-yellow{border-color:#a16207;background:#fefce8}
+.ludo-dice-split.ludo-dice-green {border-color:#166534;background:#f0fdf4}
+.ludo-dice-split.ludo-dice-red   {border-color:#991b1b;background:#fff1f2}
+.ludo-dice{font-size:4rem;min-width:52px;text-align:center;display:inline-block;transition:transform .15s}
 .ludo-finished{margin-top:10px;font-size:.85rem;color:var(--gray);text-align:center;font-weight:700}
 .ludo-status{text-align:center;font-weight:700;font-size:.92rem;padding:8px 14px;
   background:#f1f5f9;border-radius:10px;margin-bottom:8px;min-height:36px;border:1px solid #e2e8f0}
@@ -1023,7 +1047,7 @@ tr:hover td{background:#fafbff}
 .sl-panel-name{font-family:'Fredoka One',cursive;font-size:1.15rem;color:#1a1a2e}
 .sl-roll-btn{width:100%;font-size:.88rem !important;padding:10px 6px !important}
 .sl-board-area{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
-.sl-dice-sm{font-size:2.2rem;line-height:1;min-height:2.4rem;text-align:center}
+.sl-dice-sm{font-size:3.8rem;line-height:1;min-height:4rem;text-align:center;display:inline-block;transition:transform .15s}
 .sl-last-roll-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;
   color:var(--gray);font-weight:700}
 .sl-last-roll{font-size:1rem;font-weight:800;color:var(--dark);min-height:1.4rem}

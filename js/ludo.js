@@ -298,6 +298,7 @@ const LudoGame = (() => {
     updateFinishedDisplay();
 
     const cp = _cp();
+    _setDiceColor(cp.colors[0]);
     if (cp.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
       setTimeout(computerTurn, 900);
@@ -555,6 +556,7 @@ const LudoGame = (() => {
     if (!switchPlayer) {
       // Rolled 6 — same player goes again
       const cp = _cp();
+      _setDiceColor(cp.colors[0]);
       if (cp.isComputer) {
         setStatus('🤖 Computer rolled 6 — goes again!', 'gray');
         setTimeout(computerTurn, 700);
@@ -568,6 +570,7 @@ const LudoGame = (() => {
     // Advance turn index
     state.turnIdx = (state.turnIdx + 1) % state.players.length;
     const next = _cp();
+    _setDiceColor(next.colors[0]);
 
     if (next.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
@@ -731,19 +734,53 @@ const LudoGame = (() => {
 
   function animateDice() {
     return new Promise(resolve => {
-      const el     = document.getElementById('ludo-dice-val');
+      const el1    = document.getElementById('ludo-dice-val');
+      const el2    = document.getElementById('ludo-dice-val-2');
       const faces  = ['⚀','⚁','⚂','⚃','⚄','⚅'];
       const result = Math.floor(Math.random() * 6) + 1;
-      let   count  = 0;
-      const iv = setInterval(() => {
-        if (el) el.textContent = faces[Math.floor(Math.random() * 6)];
-        if (++count >= 8) {
-          clearInterval(iv);
-          if (el) el.textContent = faces[result - 1];
+      // Randomly 3 or 6 seconds
+      const totalMs = Math.random() < 0.5 ? 3000 : 6000;
+      const start   = Date.now();
+      let   lastSound = Date.now();
+
+      [el1, el2].forEach(el => { if (el) el.classList.add('dice-rolling'); });
+      window.SFX?.play('click');
+
+      function tick() {
+        const elapsed  = Date.now() - start;
+        const progress = Math.min(elapsed / totalMs, 1);
+
+        if (progress >= 1) {
+          [el1, el2].forEach(el => {
+            if (el) { el.classList.remove('dice-rolling'); el.textContent = faces[result - 1]; }
+          });
           resolve(result);
+          return;
         }
-      }, 80);
+
+        if (el1) el1.textContent = faces[Math.floor(Math.random() * 6)];
+        if (el2) el2.textContent = faces[Math.floor(Math.random() * 6)];
+
+        // Tap sound every ~380ms
+        if (Date.now() - lastSound > 380) {
+          window.SFX?.play('click');
+          lastSound = Date.now();
+        }
+
+        // Ease-out: starts at 55ms, slows to 280ms
+        const delay = Math.round(55 + progress * progress * 225);
+        setTimeout(tick, delay);
+      }
+
+      tick();
     });
+  }
+
+  function _setDiceColor(color) {
+    const split = document.getElementById('ludo-dice-split');
+    if (!split) return;
+    split.className = 'ludo-dice-split';
+    if (color) split.classList.add(`ludo-dice-${color}`);
   }
 
   function setStatus(msg, colour) {
@@ -772,7 +809,11 @@ const LudoGame = (() => {
   function restartGame() {
     window.SFX?.play('click');
     document.getElementById('ludo-end').style.display = 'none';
-    document.getElementById('ludo-dice-val').textContent = '🎲';
+    const d1 = document.getElementById('ludo-dice-val');
+    const d2 = document.getElementById('ludo-dice-val-2');
+    if (d1) d1.textContent = '🎲';
+    if (d2) d2.textContent = '🎲';
+    _setDiceColor(null);
     init(); // back to setup screen
   }
 
@@ -784,5 +825,5 @@ const LudoGame = (() => {
     }
   }
 
-  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame, _startVsFriend };
+  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame, _startVsFriend, _setDiceColor };
 })();

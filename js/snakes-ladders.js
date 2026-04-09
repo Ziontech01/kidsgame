@@ -3,11 +3,38 @@
 
 const SnakesLadders = (() => {
 
-  /* ── Board data (classic balanced positions) ───────────────── */
-  // Snakes: head (high) → tail (low)
-  const SNAKES  = { 99:78, 95:75, 93:73, 87:24, 64:60, 62:19, 49:11, 47:26, 16:6 };
-  // Ladders: foot (low) → top (high)
-  const LADDERS = { 4:14, 9:31, 20:38, 28:84, 40:59, 51:67, 63:81, 71:91 };
+  /* ── 5 board configurations ─────────────────────────────────── */
+  const BOARD_CONFIGS = [
+    {
+      name: 'Classic', emoji: '🏁',
+      snakes:  { 99:78, 95:75, 93:73, 87:24, 64:60, 62:19, 49:11, 47:26, 16:6 },
+      ladders: { 4:14,  9:31, 20:38, 28:84, 40:59, 51:67, 63:81, 71:91 }
+    },
+    {
+      name: 'Lucky', emoji: '🍀',
+      snakes:  { 98:54, 92:68, 77:43, 55:34, 42:17, 31:5 },
+      ladders: { 3:22,  8:30, 15:44, 25:76, 37:62, 47:83, 57:88, 68:93 }
+    },
+    {
+      name: 'Snakefest', emoji: '🐍',
+      snakes:  { 99:45, 96:72, 93:12, 88:30, 85:7, 74:51, 66:23, 53:18, 41:8, 27:3 },
+      ladders: { 6:25, 19:60, 35:78, 58:91 }
+    },
+    {
+      name: 'Zigzag', emoji: '⚡',
+      snakes:  { 96:37, 82:58, 76:24, 69:46, 54:29, 43:9, 28:13 },
+      ladders: { 5:18, 12:39, 21:56, 33:68, 44:72, 65:85, 75:92 }
+    },
+    {
+      name: 'Easy Rider', emoji: '🌈',
+      snakes:  { 97:75, 84:59, 63:37 },
+      ladders: { 2:16, 7:23, 11:35, 18:46, 24:57, 32:65, 38:72, 52:83, 61:89, 70:95 }
+    }
+  ];
+
+  // Active board (set by board picker, defaults to Classic)
+  let SNAKES  = BOARD_CONFIGS[0].snakes;
+  let LADDERS = BOARD_CONFIGS[0].ladders;
 
   // One distinct colour per snake — NO blue or red (reserved for player pieces)
   const SNAKE_COLORS = [
@@ -23,13 +50,14 @@ const SnakesLadders = (() => {
   ];
 
   /* ── State ─────────────────────────────────────────────────── */
-  let playerPos  = 0;
-  let compPos    = 0;
-  let myTurn     = true;
-  let rolling    = false;
-  let gameOver   = false;
-  let startTime  = null;
-  let totalMoves = 0;
+  let playerPos   = 0;
+  let compPos     = 0;
+  let myTurn      = true;
+  let rolling     = false;
+  let gameOver    = false;
+  let startTime   = null;
+  let totalMoves  = 0;
+  let selectedBoardIdx = 0;
 
   /* ── Vibrant cycling tile palette — NO blue or red ─────────── */
   const CELL_COLORS = [
@@ -55,41 +83,69 @@ const SnakesLadders = (() => {
 
   function _showModeSelect() {
     const board = document.getElementById('sl-board');
-    if (board) {
-      board.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-                    height:100%;min-height:320px;gap:14px;padding:28px;text-align:center">
-          <div style="font-size:2.6rem">🐍🪜</div>
-          <div style="font-family:'Fredoka One',cursive;font-size:1.35rem;color:#1a1a2e;font-weight:800">
-            How do you want to play?
-          </div>
-          <button class="btn btn-primary sl-roll-btn"
-                  onclick="SnakesLadders._startVsComputer()"
-                  style="width:190px;padding:13px 20px;font-size:.95rem">
-            🖥️ vs Computer
-          </button>
-          <button onclick="SnakesLadders._startVsFriend()"
-                  style="width:190px;padding:13px 20px;font-size:.95rem;font-weight:800;
-                         background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;
-                         border:none;border-radius:12px;cursor:pointer;
-                         font-family:'Fredoka One',cursive;transition:opacity .2s"
-                  onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-            🤝 vs Friend Online
-          </button>
-          <p style="font-size:.75rem;color:#aaa;font-weight:600;margin:0">
-            🔑 Sign in required for online play
-          </p>
-        </div>`;
-    }
+    if (!board) return;
+
+    const boardBtns = BOARD_CONFIGS.map((b, i) => `
+      <button id="sl-board-btn-${i}"
+        onclick="SnakesLadders._selectBoard(${i})"
+        style="padding:9px 14px;border:2px solid ${i === selectedBoardIdx ? '#6366f1' : '#d1d5db'};
+               border-radius:12px;background:${i === selectedBoardIdx ? '#ede9fe' : '#fff'};
+               font-weight:800;font-size:.82rem;cursor:pointer;transition:all .18s;
+               font-family:'Nunito',sans-serif;color:${i === selectedBoardIdx ? '#4f46e5' : '#374151'}">
+        ${b.emoji} ${b.name}
+      </button>`).join('');
+
+    board.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  height:100%;min-height:380px;gap:16px;padding:28px;text-align:center">
+        <div style="font-size:2.6rem">🐍🪜</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:1.35rem;color:#1a1a2e">
+          Choose a Board
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:320px">
+          ${boardBtns}
+        </div>
+        <div style="font-size:.75rem;color:#6b7280;font-weight:600;margin:-4px 0 4px">
+          ${BOARD_CONFIGS[selectedBoardIdx].snakes ? Object.keys(BOARD_CONFIGS[selectedBoardIdx].snakes).length : 0} snakes •
+          ${BOARD_CONFIGS[selectedBoardIdx].ladders ? Object.keys(BOARD_CONFIGS[selectedBoardIdx].ladders).length : 0} ladders
+        </div>
+        <button class="btn btn-primary sl-roll-btn"
+                onclick="SnakesLadders._startVsComputer()"
+                style="width:200px;padding:13px 20px;font-size:.95rem">
+          🖥️ vs Computer
+        </button>
+        <button onclick="SnakesLadders._startVsFriend()"
+                style="width:200px;padding:13px 20px;font-size:.95rem;font-weight:800;
+                       background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;
+                       border:none;border-radius:12px;cursor:pointer;
+                       font-family:'Fredoka One',cursive;transition:opacity .2s"
+                onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          🤝 vs Friend Online
+        </button>
+        <p style="font-size:.75rem;color:#aaa;font-weight:600;margin:0">
+          🔑 Sign in required for online play
+        </p>
+      </div>`;
+
     setStatus('');
+  }
+
+  function _selectBoard(idx) {
+    selectedBoardIdx = idx;
+    SNAKES  = BOARD_CONFIGS[idx].snakes;
+    LADDERS = BOARD_CONFIGS[idx].ladders;
+    _showModeSelect();
   }
 
   function _startVsComputer() {
     const board = document.getElementById('sl-board');
     if (board) board.innerHTML = '';
+    // Apply selected board config
+    SNAKES  = BOARD_CONFIGS[selectedBoardIdx].snakes;
+    LADDERS = BOARD_CONFIGS[selectedBoardIdx].ladders;
     startTime = Date.now();
     renderBoard();
-    setStatus('🎲 Your turn! Roll the dice to move.', 'blue');
+    setStatus(`🎲 Your turn! Roll the dice to move. (${BOARD_CONFIGS[selectedBoardIdx].emoji} ${BOARD_CONFIGS[selectedBoardIdx].name})`, 'blue');
     enableRoll(true);
   }
 
@@ -421,19 +477,44 @@ const SnakesLadders = (() => {
 
   function animateDice(elId) {
     return new Promise(resolve => {
-      const diceEl = document.getElementById(elId);
-      const faces  = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-      let count = 0;
-      const final  = Math.floor(Math.random() * 6) + 1;
-      const iv = setInterval(() => {
-        if (diceEl) diceEl.textContent = faces[Math.floor(Math.random() * 6)];
-        count++;
-        if (count >= 8) {
-          clearInterval(iv);
-          if (diceEl) diceEl.textContent = faces[final - 1];
+      const diceEl  = document.getElementById(elId);
+      const faces   = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+      const final   = Math.floor(Math.random() * 6) + 1;
+      // Randomly 3 or 6 seconds
+      const totalMs = Math.random() < 0.5 ? 3000 : 6000;
+      const start   = Date.now();
+      let   lastSound = Date.now();
+
+      if (diceEl) diceEl.classList.add('dice-rolling');
+      window.SFX?.play('click');
+
+      function tick() {
+        const elapsed  = Date.now() - start;
+        const progress = Math.min(elapsed / totalMs, 1);
+
+        if (progress >= 1) {
+          if (diceEl) {
+            diceEl.classList.remove('dice-rolling');
+            diceEl.textContent = faces[final - 1];
+          }
           resolve(final);
+          return;
         }
-      }, 80);
+
+        if (diceEl) diceEl.textContent = faces[Math.floor(Math.random() * 6)];
+
+        // Tap sound every ~380ms
+        if (Date.now() - lastSound > 380) {
+          window.SFX?.play('click');
+          lastSound = Date.now();
+        }
+
+        // Ease-out: starts at 55ms, slows to 280ms
+        const delay = Math.round(55 + progress * progress * 225);
+        setTimeout(tick, delay);
+      }
+
+      tick();
     });
   }
 
@@ -578,5 +659,5 @@ const SnakesLadders = (() => {
     _startVsComputer();
   }
 
-  return { init, rollDice, restartGame, _startVsComputer, _startVsFriend };
+  return { init, rollDice, restartGame, _startVsComputer, _startVsFriend, _selectBoard };
 })();
