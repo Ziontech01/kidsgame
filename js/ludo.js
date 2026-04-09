@@ -144,6 +144,22 @@ const LudoGame = (() => {
           <button class="btn btn-primary btn-lg ludo-start-btn"
             onclick="LudoGame._startGame()">🎲 Start Game!</button>
         </div>
+
+        <div style="margin-top:18px;padding-top:16px;border-top:2px dashed #e5e7eb;text-align:center">
+          <div style="font-size:.78rem;color:#aaa;font-weight:700;margin-bottom:10px;
+                      text-transform:uppercase;letter-spacing:.06em">— or play online —</div>
+          <button onclick="LudoGame._startVsFriend()"
+                  style="background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;
+                         border-radius:14px;padding:14px 28px;font-size:1rem;font-weight:800;
+                         cursor:pointer;font-family:'Fredoka One',cursive;width:100%;
+                         transition:opacity .2s"
+                  onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            🤝 vs Friend Online
+          </button>
+          <p style="font-size:.75rem;color:#aaa;margin-top:8px;font-weight:600">
+            🔑 Sign in required for online play
+          </p>
+        </div>
       </div>`;
 
     // Store logged-in name for auto-fill
@@ -760,5 +776,13 @@ const LudoGame = (() => {
     init(); // back to setup screen
   }
 
-  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame };
+  function _startVsFriend() {
+    if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+      window.location.href = 'ludo-multi.html';
+    } else {
+      window.location.href = '../login.html';
+    }
+  }
+
+  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame, _startVsFriend };
 })();

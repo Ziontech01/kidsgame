@@ -47,11 +47,58 @@ const SnakesLadders = (() => {
   function init() {
     playerPos = 0; compPos = 0;
     myTurn = true; rolling = false; gameOver = false;
-    totalMoves = 0; startTime = Date.now();
+    totalMoves = 0;
+    hideLoading();
+    enableRoll(false);
+    _showModeSelect();
+  }
+
+  function _showModeSelect() {
+    const board = document.getElementById('sl-board');
+    if (board) {
+      board.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                    height:100%;min-height:320px;gap:14px;padding:28px;text-align:center">
+          <div style="font-size:2.6rem">🐍🪜</div>
+          <div style="font-family:'Fredoka One',cursive;font-size:1.35rem;color:#1a1a2e;font-weight:800">
+            How do you want to play?
+          </div>
+          <button class="btn btn-primary sl-roll-btn"
+                  onclick="SnakesLadders._startVsComputer()"
+                  style="width:190px;padding:13px 20px;font-size:.95rem">
+            🖥️ vs Computer
+          </button>
+          <button onclick="SnakesLadders._startVsFriend()"
+                  style="width:190px;padding:13px 20px;font-size:.95rem;font-weight:800;
+                         background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;
+                         border:none;border-radius:12px;cursor:pointer;
+                         font-family:'Fredoka One',cursive;transition:opacity .2s"
+                  onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            🤝 vs Friend Online
+          </button>
+          <p style="font-size:.75rem;color:#aaa;font-weight:600;margin:0">
+            🔑 Sign in required for online play
+          </p>
+        </div>`;
+    }
+    setStatus('');
+  }
+
+  function _startVsComputer() {
+    const board = document.getElementById('sl-board');
+    if (board) board.innerHTML = '';
+    startTime = Date.now();
     renderBoard();
     setStatus('🎲 Your turn! Roll the dice to move.', 'blue');
     enableRoll(true);
-    hideLoading();
+  }
+
+  function _startVsFriend() {
+    if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+      window.location.href = 'snakes-ladders-multi.html';
+    } else {
+      window.location.href = '../login.html';
+    }
   }
 
   /* ── Board rendering ───────────────────────────────────────── */
@@ -528,8 +575,8 @@ const SnakesLadders = (() => {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';
     });
-    init();
+    _startVsComputer();
   }
 
-  return { init, rollDice, restartGame };
+  return { init, rollDice, restartGame, _startVsComputer, _startVsFriend };
 })();
