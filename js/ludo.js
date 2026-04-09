@@ -321,14 +321,15 @@ const LudoGame = (() => {
       pieces,
       players,
       activeColors: players.flatMap(p => p.colors),
-      turnIdx:  0,
-      die:      null,
-      rolled:   false,
-      moving:   false,
-      over:     false,
-      startTime:  Date.now(),
-      totalMoves: 0,
-      gameMode: gameMode || 'kids'
+      turnIdx:      0,
+      die:          null,
+      rolled:       false,
+      moving:       false,
+      over:         false,
+      startTime:    Date.now(),
+      totalMoves:   0,
+      gameMode:     gameMode || 'kids',
+      placements:   []   // finish order: [{ name, colors, isComputer, place }]
     };
 
     // Update mode badge and legend
@@ -639,8 +640,18 @@ const LudoGame = (() => {
       return;
     }
 
-    // Advance turn index
-    state.turnIdx = (state.turnIdx + 1) % state.players.length;
+    // Advance turn index — skip players who have already finished
+    let attempts = 0;
+    do {
+      state.turnIdx = (state.turnIdx + 1) % state.players.length;
+      attempts++;
+    } while (
+      state.placements.find(pl => pl.name === _cp().name && pl.colors[0] === _cp().colors[0]) &&
+      attempts < state.players.length
+    );
+
+    if (state.over) return; // all players placed, game ended in recordPlacement
+
     const next = _cp();
     _setDiceColor(next.colors[0]);
     _highlightActiveHome(next.colors[0]);
@@ -753,45 +764,93 @@ const LudoGame = (() => {
   ════════════════════════════════════════════════════════════ */
   function checkWin() {
     for (const player of state.players) {
+      // Skip already-placed players
+      if (state.placements.find(pl => pl.name === player.name && pl.colors[0] === player.colors[0])) continue;
       if (player.colors.every(c => state.pieces[c].every(p => p === 60))) {
-        state.over = true;
-        endGame(player);
+        recordPlacement(player);
         return true;
       }
     }
     return false;
   }
 
-  async function endGame(winner) {
+  function recordPlacement(player) {
+    const place = state.placements.length + 1;
+    state.placements.push({ name: player.name, colors: player.colors, isComputer: player.isComputer, place });
+
+    const medals  = ['🥇','🥈','🥉','🏅'];
+    const medal   = medals[place - 1] || `#${place}`;
+    const colStr  = player.colors.map(c => COLOR_CONFIG[c].emoji).join('');
+    const ordinal = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : place + 'th';
+    window.SFX?.play('win');
+    setStatus(`${medal} ${player.name} finished in ${ordinal} place! ${colStr} All pieces home!`, player.colors[0]);
+
+    // Count unfinished players
+    const unfinished = state.players.filter(p =>
+      !state.placements.find(pl => pl.name === p.name && pl.colors[0] === p.colors[0])
+    );
+
+    if (unfinished.length === 0) {
+      // All done
+      state.over = true;
+      confettiEffect();
+      showFinalRankings();
+    } else if (unfinished.length === 1) {
+      // Last player gets last place automatically
+      const last = unfinished[0];
+      state.placements.push({ name: last.name, colors: last.colors, isComputer: last.isComputer, place: state.placements.length + 1 });
+      state.over = true;
+      confettiEffect();
+      showFinalRankings();
+    }
+    // else: game continues — endTurn() will handle advancing to next player
+  }
+
+  async function showFinalRankings() {
     enableRoll(false);
     const elapsed = Math.round((Date.now() - state.startTime) / 1000);
     const mm = Math.floor(elapsed / 60), ss = String(elapsed % 60).padStart(2, '0');
     const timeStr = `${mm}:${ss}`;
-    const isHuman = !winner.isComputer;
+    const medals  = ['🥇','🥈','🥉','🏅'];
+    const winner  = state.placements[0];
     const colStr  = winner.colors.map(c => COLOR_CONFIG[c].emoji).join('');
-
-    window.SFX?.play(isHuman ? 'win' : 'lose');
-    setStatus(`${isHuman ? '🏆' : '🤖'} ${winner.name} wins! ${colStr}`, winner.colors[0]);
 
     const overlay = document.getElementById('ludo-end');
     if (overlay) {
       overlay.style.display = 'flex';
-      document.getElementById('ludo-end-icon').textContent  = isHuman ? '🏆' : '🤖';
-      document.getElementById('ludo-end-title').textContent = `${winner.name} Wins!`;
-      document.getElementById('ludo-end-msg').textContent   = isHuman
-        ? `Brilliant! ${winner.name} got all ${colStr} pieces home first!`
-        : `The computer won this time. Better luck next game!`;
-      document.getElementById('ludo-end-stats').innerHTML =
-        `<span>Moves: ${state.totalMoves}</span><span>Time: ${timeStr}</span>`;
+      document.getElementById('ludo-end-icon').textContent  = colStr;
+      document.getElementById('ludo-end-title').textContent = `🏆 ${winner.name} Wins!`;
+
+      // Build rankings table
+      const rankHtml = state.placements.map((pl, i) => {
+        const plColStr = pl.colors.map(c => COLOR_CONFIG[c].emoji).join('');
+        const tok = TOKENS[Object.keys(COLOR_CONFIG).indexOf(pl.colors[0]) % TOKENS.length];
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;
+               border-radius:12px;background:${i === 0 ? 'linear-gradient(135deg,#fef9c3,#fde68a)' : '#f9fafb'};
+               margin-bottom:6px;border:2px solid ${i === 0 ? '#f59e0b' : '#e5e7eb'}">
+            <span style="font-size:1.5rem">${medals[i] || '#' + (i + 1)}</span>
+            <span style="font-size:1.3rem">${tok}</span>
+            <span style="font-size:1.1rem">${plColStr}</span>
+            <span style="font-weight:800;font-size:.95rem;flex:1">${pl.name}${pl.isComputer ? ' 🤖' : ''}</span>
+            <span style="font-size:.8rem;color:#6b7280">${i === 0 ? '🏆 Winner!' : i === state.placements.length - 1 ? '😊 Good game!' : '👏 Well played!'}</span>
+          </div>`;
+      }).join('');
+
+      document.getElementById('ludo-end-msg').innerHTML  = rankHtml;
+      document.getElementById('ludo-end-stats').innerHTML = `<span>Moves: ${state.totalMoves}</span><span>Time: ${timeStr}</span>`;
     }
 
-    // Confetti!
-    if (isHuman) confettiEffect();
-
-    if (isHuman) {
+    // Save result for first human who placed
+    const firstHuman = state.placements.find(pl => !pl.isComputer);
+    if (firstHuman) {
       await saveResult({
-        gameType: 'ludo', outcome: 'win', level: 'all',
-        moves: state.totalMoves, duration: elapsed, timeStr
+        gameType: 'ludo',
+        outcome:  firstHuman.place === 1 ? 'win' : 'lose',
+        level:    'all',
+        moves:    state.totalMoves,
+        duration: elapsed,
+        timeStr
       });
     }
   }

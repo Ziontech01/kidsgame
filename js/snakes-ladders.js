@@ -74,12 +74,13 @@ const SnakesLadders = (() => {
   let selectedBoardIdx = 0;
 
   /* ── Game state ─────────────────────────────────────────────── */
-  let players         = [];  // { name, pos, token, isComputer, colorName, colorHex }
+  let players         = [];  // { name, pos, token, isComputer, colorName, colorHex, finished }
   let currentPlayerIdx = 0;
   let rolling         = false;
   let gameOver        = false;
   let startTime       = null;
   let totalMoves      = 0;
+  let placements      = [];  // finish order: [{ name, token, colorHex, isComputer, place }]
 
   /* ── Setup-screen transient state ───────────────────────────── */
   let _selectedMode   = null;   // '1cpu' | '2p' | '3cpu' | '4p'
@@ -102,6 +103,7 @@ const SnakesLadders = (() => {
     players          = [];
     currentPlayerIdx = 0;
     rolling          = false;
+    placements       = [];
     gameOver         = false;
     totalMoves       = 0;
     _selectedMode    = null;
@@ -382,21 +384,23 @@ const SnakesLadders = (() => {
      PLAYERS BAR
   ═══════════════════════════════════════════════════════════════ */
   function renderPlayersBar() {
+    const medals = ['🥇','🥈','🥉','🏅'];
     const bar = document.getElementById('sl-players-bar');
     if (!bar) return;
     bar.innerHTML = players.map((p, i) => {
-      const isActive = (i === currentPlayerIdx) && !gameOver;
-      const isWinner = p.pos === 100;
+      const isActive  = (i === currentPlayerIdx) && !gameOver && !p.finished;
+      const placement = placements.findIndex(pl => pl.name === p.name && pl.colorHex === p.colorHex);
+      const placeLabel = placement >= 0 ? medals[placement] || `#${placement + 1}` : null;
       let cls = 'sl-player-card';
-      if (isActive) cls += ' sl-player-card--active';
-      if (isWinner) cls += ' sl-player-card--winner';
+      if (isActive)    cls += ' sl-player-card--active';
+      if (p.finished)  cls += ' sl-player-card--winner';
 
       return `
-        <div class="${cls}" id="sl-pcard-${i}" style="border-color:${isActive ? '#6366f1' : 'transparent'}">
-          <div class="sl-player-token">${isWinner ? '👑' : p.token}</div>
-          <div class="sl-player-name" style="color:${p.colorHex}">${p.name}</div>
-          <div id="sl-dice-p${i}" class="sl-player-dice">🎲</div>
-          <div class="sl-player-sq">Square: ${p.pos}</div>
+        <div class="${cls}" id="sl-pcard-${i}">
+          <div class="sl-player-token">${placeLabel || p.token}</div>
+          <div class="sl-player-name" style="color:${p.colorHex}">${p.name}${p.isComputer ? ' 🤖' : ''}</div>
+          <div id="sl-dice-p${i}" class="sl-player-dice">${p.finished ? '✅' : '🎲'}</div>
+          <div class="sl-player-sq">${p.finished ? placeLabel + ' Finished!' : 'Square: ' + p.pos}</div>
         </div>`;
     }).join('');
   }
@@ -425,7 +429,12 @@ const SnakesLadders = (() => {
 
   function advanceTurn() {
     if (gameOver) return;
-    currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+    // Skip players who have already finished
+    let attempts = 0;
+    do {
+      currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+      attempts++;
+    } while (players[currentPlayerIdx].finished && attempts < players.length);
     _startTurn();
   }
 
@@ -527,53 +536,91 @@ const SnakesLadders = (() => {
      END GAME
   ═══════════════════════════════════════════════════════════════ */
   async function endGame(winnerIdx) {
-    gameOver = true;
-    enableRoll(false);
-    const p       = players[winnerIdx];
+    const p = players[winnerIdx];
+
+    // Mark this player as finished and record their placement
+    p.finished = true;
+    const place = placements.length + 1;
+    placements.push({ name: p.name, token: p.token, colorHex: p.colorHex, isComputer: p.isComputer, place });
+
+    window.SFX?.play('win');
+    renderPlayersBar();
+
+    // Count still-active players
+    const stillActive = players.filter(pl => !pl.finished);
+
+    if (stillActive.length === 0) {
+      // Everyone has finished — show final rankings
+      gameOver = true;
+      enableRoll(false);
+      confettiEffect();
+      showFinalRankings();
+    } else if (stillActive.length === 1) {
+      // Last player remaining gets last place automatically
+      const last = stillActive[0];
+      last.finished = true;
+      placements.push({ name: last.name, token: last.token, colorHex: last.colorHex, isComputer: last.isComputer, place: placements.length + 1 });
+      gameOver = true;
+      enableRoll(false);
+      confettiEffect();
+      showFinalRankings();
+    } else {
+      // More than one player still going — announce placement and continue
+      const medals = ['🥇','🥈','🥉','🏅'];
+      const medal  = medals[place - 1] || `#${place}`;
+      setStatus(`${medal} ${p.name} finished in ${place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : place + 'th'} place! Keep going…`, p.colorHex);
+      await pause(2000);
+      advanceTurn();
+    }
+  }
+
+  function showFinalRankings() {
+    const medals  = ['🥇','🥈','🥉','🏅'];
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     const mm      = Math.floor(elapsed / 60);
     const ss      = String(elapsed % 60).padStart(2, '0');
     const timeStr = `${mm}:${ss}`;
+    const winner  = placements[0];
 
-    window.SFX?.play('win');
-    setStatus(`🏆 ${p.name} wins! Congratulations! 🎉`, p.colorHex);
-
-    // Mark winner on players bar
-    renderPlayersBar();
-    const winCard = document.getElementById(`sl-pcard-${winnerIdx}`);
-    if (winCard) winCard.classList.add('sl-player-card--winner');
-
-    // Confetti
-    confettiEffect();
-
-    // End overlay
     const overlay = document.getElementById('sl-end');
-    if (overlay) {
-      overlay.style.display = 'flex';
-      const iconEl  = document.getElementById('sl-end-icon');
-      const titleEl = document.getElementById('sl-end-title');
-      const msgEl   = document.getElementById('sl-end-msg');
-      const statsEl = document.getElementById('sl-end-stats');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
 
-      if (iconEl)  iconEl.textContent  = p.token;
-      if (titleEl) titleEl.textContent = `🏆 ${p.name} Wins!`;
-      if (msgEl)   msgEl.textContent   = `Amazing adventure! ${p.name} reached square 100 first!`;
-      if (statsEl) statsEl.innerHTML   =
-        `<span>Moves: ${totalMoves}</span><span>Time: ${timeStr}</span>`;
+    const iconEl  = document.getElementById('sl-end-icon');
+    const titleEl = document.getElementById('sl-end-title');
+    const msgEl   = document.getElementById('sl-end-msg');
+    const statsEl = document.getElementById('sl-end-stats');
+
+    if (iconEl)  iconEl.textContent  = winner.token;
+    if (titleEl) titleEl.textContent = `🏆 ${winner.name} Wins!`;
+
+    // Rankings table
+    if (msgEl) {
+      msgEl.innerHTML = placements.map((pl, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;
+             border-radius:12px;background:${i === 0 ? 'linear-gradient(135deg,#fef9c3,#fde68a)' : '#f9fafb'};
+             margin-bottom:6px;border:2px solid ${i === 0 ? '#f59e0b' : '#e5e7eb'}">
+          <span style="font-size:1.5rem">${medals[i] || '#' + (i + 1)}</span>
+          <span style="font-size:1.4rem">${pl.token}</span>
+          <span style="font-weight:800;font-size:.95rem;flex:1;color:${pl.colorHex}">${pl.name}${pl.isComputer ? ' 🤖' : ''}</span>
+          <span style="font-size:.8rem;color:#6b7280">${i === 0 ? '🏆 Winner!' : i === placements.length - 1 ? '😊 Nicely done!' : '👏 Well played!'}</span>
+        </div>`).join('');
     }
 
-    // Determine outcome for saving (win if first non-computer player wins, else lose)
-    const firstHuman = players.find(pl => !pl.isComputer);
-    const humanWon   = firstHuman && p.name === firstHuman.name;
+    if (statsEl) statsEl.innerHTML = `<span>Moves: ${totalMoves}</span><span>Time: ${timeStr}</span>`;
 
-    await saveResult({
-      gameType: 'snakes-ladders',
-      outcome:  humanWon ? 'win' : 'lose',
-      level:    'all',
-      moves:    totalMoves,
-      duration: elapsed,
-      timeStr
-    });
+    // Save result for first human player
+    const firstHumanPlace = placements.find(pl => !pl.isComputer);
+    if (firstHumanPlace) {
+      saveResult({
+        gameType: 'snakes-ladders',
+        outcome:  firstHumanPlace.place === 1 ? 'win' : 'lose',
+        level:    'all',
+        moves:    totalMoves,
+        duration: elapsed,
+        timeStr
+      });
+    }
   }
 
   /* ── Confetti burst ─────────────────────────────────────────── */
