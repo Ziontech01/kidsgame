@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Happy Games – Time Quiz</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body class="quiz-page">
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner">
+    <div style="font-size:3rem;margin-bottom:12px">🕐</div>
+    <div class="spinner"></div>
+    <div class="loading-title">Time Quiz</div>
+  </div>
+</div>
+<nav class="navbar">
+  <a class="nav-logo" href="../index.html"><span class="logo-emoji">🎮</span> Happy Games</a>
+  <div class="nav-links">
+    <span class="nav-user" id="nav-username" style="display:none">👤</span>
+    <a href="../index.html" class="btn btn-outline" style="font-size:.85rem">🏠 Home</a>
+    <a href="history.html" class="btn btn-outline" style="font-size:.85rem">📊 Results</a>
+    <a href="../login.html" class="btn btn-secondary" id="nav-login-btn" style="font-size:.85rem">🔑 Login</a>
+    <button class="btn btn-outline" id="nav-logout-btn" style="display:none;font-size:.85rem" onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+<div id="quiz-container" style="min-height:calc(100vh - 70px)"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script src="../js/nav.js"></script>
+<script src="../js/questions/time.js"></script>
+<script src="../js/sound.js"></script>
+<script src="../js/quiz-engine.js"></script>
+<script>
+  softAuth(() => {
+    QuizEngine.init({
+      gameType:     'time',
+      title:        'Time Quiz',
+      icon:         '🕐',
+      containerId:  'quiz-container',
+      getQuestions: getTimeQuestions
+    });
+  });
+</script>
+</body>
+</html>
