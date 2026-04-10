@@ -413,6 +413,13 @@ const SnakesLadders = (() => {
     renderPlayersBar();
 
     const p = players[currentPlayerIdx];
+
+    // Update left-panel token + name
+    const panelToken = document.getElementById('sl-panel-token');
+    const panelName  = document.getElementById('sl-panel-name');
+    if (panelToken) panelToken.textContent = p.token;
+    if (panelName)  panelName.textContent  = p.name + (p.isComputer ? ' 🤖' : '');
+
     const rollBtn = document.getElementById('sl-roll-btn');
 
     if (p.isComputer) {
@@ -451,7 +458,9 @@ const SnakesLadders = (() => {
     rolling = true;
     totalMoves++;
 
-    const die = await animateDice(`sl-dice-p${currentPlayerIdx}`);
+    const die = await animateDice('sl-main-dice');
+    const lastRollEl = document.getElementById('sl-last-roll');
+    if (lastRollEl) lastRollEl.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][die - 1];
     await movePlayer(currentPlayerIdx, die);
 
     rolling = false;
@@ -465,7 +474,9 @@ const SnakesLadders = (() => {
     rolling = true;
     totalMoves++;
 
-    const die = await animateDice(`sl-dice-p${currentPlayerIdx}`);
+    const die = await animateDice('sl-main-dice');
+    const lastRollEl2 = document.getElementById('sl-last-roll');
+    if (lastRollEl2) lastRollEl2.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][die - 1];
     await movePlayer(currentPlayerIdx, die);
 
     rolling = false;

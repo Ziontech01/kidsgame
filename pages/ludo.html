@@ -58,6 +58,29 @@
       0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
       100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
     }
+
+    /* ── Token picker in setup ───────────────────────────────── */
+    .ludo-token-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+    }
+    .ludo-token-btn {
+      font-size: 1.3rem;
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      border: 2px solid #e5e7eb;
+      background: #f9fafb;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .ludo-token-btn:hover  { border-color: #6366f1; background: #ede9fe; }
+    .ludo-token-btn.active { border-color: #6366f1; background: #ede9fe; transform: scale(1.15); }
   </style>
 </head>
 <body style="background:linear-gradient(135deg,#fff1f2,#f0f9ff);min-height:100vh">
@@ -87,49 +110,62 @@
 
   <!-- ── Game area (hidden until setup complete) ── -->
   <div id="ludo-game-area" style="display:none">
+    <div class="ludo-layout">
 
-    <!-- Controls bar -->
-    <div class="ludo-controls">
-      <div class="ludo-player-info" id="ludo-player-info"></div>
-      <div class="ludo-dice-area">
+      <!-- Left panel: dice + roll button + player info -->
+      <div class="ludo-side-panel">
+        <div class="ludo-player-info" id="ludo-player-info" style="font-size:.8rem;line-height:1.5;width:100%"></div>
         <div class="ludo-dice-split" id="ludo-dice-split">
           <div class="ludo-dice" id="ludo-dice-val">🎲</div>
           <div class="ludo-dice" id="ludo-dice-val-2">🎲</div>
         </div>
-        <button class="btn btn-primary btn-lg" id="ludo-roll-btn" onclick="LudoGame.rollDice()" disabled>
-          🎲 Roll Dice!
-        </button>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button class="btn btn-primary" id="ludo-roll-btn" onclick="LudoGame.rollDice()" disabled
+                style="width:100%;padding:11px 6px;font-size:.88rem">🎲 Roll!</button>
         <div class="ludo-mode-badge" id="ludo-mode-badge">🌟 Kids Mode</div>
-        <div class="ludo-finished" id="ludo-finished"></div>
+        <div class="ludo-finished" id="ludo-finished"
+             style="font-size:.72rem;line-height:1.8;text-align:center;width:100%"></div>
       </div>
-    </div>
 
-    <!-- Status message -->
-    <div class="ludo-status" id="ludo-status">Get ready…</div>
+      <!-- Center: board + labels + status + legend -->
+      <div class="ludo-board-wrap">
+        <div class="ludo-status" id="ludo-status">Get ready…</div>
 
-    <!-- Zone labels — top row (Green left, Yellow right) -->
-    <div class="ludo-corner-bar">
-      <div class="ludo-corner-tag ludo-tag-green"  id="ludo-label-green">🟢 Green</div>
-      <div class="ludo-corner-tag ludo-tag-yellow" id="ludo-label-yellow">🟡 Yellow</div>
-    </div>
+        <div class="ludo-corner-bar">
+          <div class="ludo-corner-tag ludo-tag-green"  id="ludo-label-green">🟢 Green</div>
+          <div class="ludo-corner-tag ludo-tag-yellow" id="ludo-label-yellow">🟡 Yellow</div>
+        </div>
 
-    <!-- 15×15 board -->
-    <div class="ludo-board" id="ludo-board"></div>
+        <div class="ludo-board" id="ludo-board"></div>
 
-    <!-- Zone labels — bottom row (Blue left, Red right) -->
-    <div class="ludo-corner-bar">
-      <div class="ludo-corner-tag ludo-tag-blue" id="ludo-label-blue">🔵 Blue</div>
-      <div class="ludo-corner-tag ludo-tag-red"  id="ludo-label-red">🔴 Red</div>
-    </div>
+        <div class="ludo-corner-bar">
+          <div class="ludo-corner-tag ludo-tag-blue" id="ludo-label-blue">🔵 Blue</div>
+          <div class="ludo-corner-tag ludo-tag-red"  id="ludo-label-red">🔴 Red</div>
+        </div>
 
-    <!-- Legend -->
-    <div class="ludo-legend" id="ludo-legend">
-      <span>★ Safe square — no captures</span>
-      <span id="ludo-legend-entry">🌟 Enter on 1 or 6!</span>
-    </div>
+        <div class="ludo-legend" id="ludo-legend">
+          <span>★ Safe square — no captures</span>
+          <span id="ludo-legend-entry">🌟 Enter on 1 or 6!</span>
+        </div>
+      </div>
 
+      <!-- Right panel: vs Friend online -->
+      <div class="ludo-side-panel" style="justify-content:flex-start;padding-top:24px;gap:12px">
+        <div style="font-size:1.9rem">🤝</div>
+        <div style="font-family:'Fredoka One',cursive;font-size:.9rem;color:#1a1a2e">Online Play</div>
+        <button onclick="LudoGame._startVsFriend()"
+                style="background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;
+                       border-radius:12px;padding:10px 8px;font-size:.8rem;font-weight:800;
+                       cursor:pointer;font-family:'Fredoka One',cursive;width:100%;
+                       transition:opacity .2s"
+                onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+          🤝 vs Friend
+        </button>
+        <p style="font-size:.7rem;color:#aaa;font-weight:600;margin:0;line-height:1.4">
+          🔑 Login required
+        </p>
+      </div>
+
+    </div><!-- end .ludo-layout -->
   </div><!-- end #ludo-game-area -->
 
 </div><!-- end .ludo-page -->

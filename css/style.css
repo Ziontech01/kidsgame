@@ -891,9 +891,12 @@ tr:hover td{background:#fafbff}
 .lc-home-green {background:#15803d;border:2px solid #15803d}
 .lc-home-red   {background:#dc2626;border:2px solid #dc2626}
 
-/* Remove internal grid lines from home zones for clean look */
-.lc-home-blue, .lc-home-yellow, .lc-home-green, .lc-home-red,
-.lc-home-inner { border-color: transparent !important; }
+/* Remove internal grid lines from home zones — match border to background so no seam shows */
+.lc-home-blue   { border-color: #1e40af !important; }
+.lc-home-yellow { border-color: #ca8a04 !important; }
+.lc-home-green  { border-color: #15803d !important; }
+.lc-home-red    { border-color: #dc2626 !important; }
+.lc-home-inner  { border-color: transparent !important; }
 
 /* Inner 4×4 white area within each home zone */
 .lc-home-inner{background:#fff !important;border:1px solid #e5e7eb}
@@ -1013,6 +1016,19 @@ tr:hover td{background:#fafbff}
   .ludo-mode-grid{grid-template-columns:1fr 1fr;gap:8px}
   .ludo-mode-btn{padding:11px 6px}
   .ludo-mode-icon{font-size:1.4rem}
+}
+
+/* ── Ludo: 3-column side-panel layout ── */
+.ludo-page{max-width:none !important;padding:0}
+.ludo-layout{display:flex;align-items:flex-start;gap:12px;max-width:880px;margin:0 auto;padding:8px 8px 40px}
+.ludo-side-panel{width:148px;flex-shrink:0;background:#fff;border-radius:18px;padding:14px 10px;
+  box-shadow:0 4px 16px rgba(0,0,0,.1);text-align:center;position:sticky;top:76px;
+  display:flex;flex-direction:column;align-items:center;gap:10px}
+.ludo-board-wrap{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
+@media(max-width:740px){
+  .ludo-layout{flex-direction:column;align-items:center;padding:8px 8px 40px}
+  .ludo-side-panel{width:100%;max-width:520px;flex-direction:row;justify-content:center;
+    flex-wrap:wrap;position:static;padding:10px 14px;gap:12px}
 }
 
 /* ═══════════════════════════════════════════════════════

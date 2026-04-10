@@ -245,14 +245,37 @@ const LudoGame = (() => {
             `<span class="ludo-chip ludo-chip-${c}">${COLOR_CONFIG[c].emoji} ${COLOR_CONFIG[c].label}</span>`
           ).join('')}
         </div>
-        <input type="text" class="ludo-name-input" id="ludo-inp-${i}"
-          placeholder="${s.label}'s name"
-          value="${s.prefill || ''}" maxlength="18" autocomplete="off"/>
+        <div style="flex:1">
+          <input type="text" class="ludo-name-input" id="ludo-inp-${i}"
+            placeholder="${s.label}'s name"
+            value="${s.prefill || ''}" maxlength="18" autocomplete="off"/>
+          <div class="ludo-token-row" id="ludo-tok-${i}">
+            ${TOKENS.map((t, ti) => `<button class="ludo-token-btn${ti === i % TOKENS.length ? ' active' : ''}"
+              onclick="LudoGame._selectToken(${i},${ti})">${t}</button>`).join('')}
+          </div>
+        </div>
       </div>`).join('');
 
     // Store mode + slots for _startGame
-    document.getElementById('ludo-setup')._mode  = mode;
-    document.getElementById('ludo-setup')._slots = slots;
+    const setupEl2 = document.getElementById('ludo-setup');
+    setupEl2._mode   = mode;
+    setupEl2._slots  = slots;
+    setupEl2._tokens = {};  // reset token choices on mode change
+    // Set defaults: slot i → token at index i
+    slots.forEach((_, i) => { setupEl2._tokens[i] = i % TOKENS.length; });
+  }
+
+  function _selectToken(slotIdx, tokenIdx) {
+    window.SFX?.play('click');
+    const setupEl = document.getElementById('ludo-setup');
+    if (!setupEl._tokens) setupEl._tokens = {};
+    setupEl._tokens[slotIdx] = tokenIdx;
+    const row = document.getElementById(`ludo-tok-${slotIdx}`);
+    if (row) {
+      row.querySelectorAll('.ludo-token-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === tokenIdx);
+      });
+    }
   }
 
   function _startGame() {
@@ -274,6 +297,20 @@ const LudoGame = (() => {
     if (mode === 1) players.push({ name: 'Computer', colors: ['green','yellow'], isComputer: true });
     if (mode === 3) players.push({ name: 'Computer', colors: ['yellow'],          isComputer: true });
 
+    // Build playerTokens map: color → chosen token emoji
+    const rawTokens = setupEl._tokens || {};
+    const playerTokens = {};
+    slots.forEach((s, i) => {
+      const tokenIdx = rawTokens[i] !== undefined ? rawTokens[i] : i % TOKENS.length;
+      s.colors.forEach(c => { playerTokens[c] = TOKENS[tokenIdx]; });
+    });
+    // CPU players get the next available token
+    const cpuOffset = slots.length;
+    players.filter(p => p.isComputer).forEach((cpuP, j) => {
+      const tokenIdx = (cpuOffset + j) % TOKENS.length;
+      cpuP.colors.forEach(c => { playerTokens[c] = TOKENS[tokenIdx]; });
+    });
+
     // Update corner labels
     _updateLabels(players);
 
@@ -282,7 +319,7 @@ const LudoGame = (() => {
     const gameArea = document.getElementById('ludo-game-area');
     if (gameArea) gameArea.style.display = 'block';
 
-    _startGameState(players, gameMode);
+    _startGameState(players, gameMode, playerTokens);
   }
 
   function _updateLabels(players) {
@@ -313,7 +350,7 @@ const LudoGame = (() => {
   /* ════════════════════════════════════════════════════════════
      GAME STATE
   ════════════════════════════════════════════════════════════ */
-  function _startGameState(players, gameMode) {
+  function _startGameState(players, gameMode, playerTokens) {
     const pieces = {};
     ['blue','yellow','green','red'].forEach(c => { pieces[c] = [-1,-1,-1,-1]; });
 
@@ -329,7 +366,8 @@ const LudoGame = (() => {
       startTime:    Date.now(),
       totalMoves:   0,
       gameMode:     gameMode || 'kids',
-      placements:   []   // finish order: [{ name, colors, isComputer, place }]
+      placements:   [],   // finish order: [{ name, colors, isComputer, place }]
+      playerTokens: playerTokens || {}
     };
 
     // Update mode badge and legend
@@ -512,8 +550,8 @@ const LudoGame = (() => {
     if (!cell) return;
     const token = document.createElement('div');
     token.className = `lc-piece lc-piece-${color}`;
-    // Show token icon inside piece
-    const tok = TOKENS[Object.keys(COLOR_CONFIG).indexOf(color) % TOKENS.length];
+    // Show token icon inside piece (use player-chosen token if available)
+    const tok = state.playerTokens?.[color] || TOKENS[Object.keys(COLOR_CONFIG).indexOf(color) % TOKENS.length];
     token.innerHTML = `<span style="font-size:.55em;line-height:1">${tok}</span>`;
     const owner = state.players?.find(p => p.colors.includes(color));
     token.title = `${owner?.name || color} — piece ${pi + 1}`;
@@ -599,7 +637,7 @@ const LudoGame = (() => {
         for (let step = 1; step <= die; step++) {
           pieces[pi] = pos + step;
           renderPieces();
-          await pause(130);
+          await pause(700);
         }
         if (newPos === 59) {
           pieces[pi] = 60;
@@ -992,5 +1030,5 @@ const LudoGame = (() => {
     }
   }
 
-  return { init, rollDice, restartGame, _selectPiece, _selectMode, _selectGameMode, _startGame, _startVsFriend, _setDiceColor };
+  return { init, rollDice, restartGame, _selectPiece, _selectMode, _selectGameMode, _selectToken, _startGame, _startVsFriend, _setDiceColor };
 })();

@@ -310,41 +310,53 @@
 
 <!-- Game screen -->
 <div id="sl-game" style="display:none">
-  <div class="sl-game-wrap">
+  <div class="sl-game-area" style="max-width:940px;margin:0 auto;padding:8px 10px 40px">
 
-    <!-- Players bar -->
-    <div class="sl-players-bar" id="sl-players-bar"></div>
-
-    <!-- Status message -->
-    <div class="sl-status" id="sl-status"></div>
-
-    <!-- Board area with jungle decorations -->
-    <div class="sl-jungle-wrap">
-      <div class="sl-deco sl-deco-1">☁️</div>
-      <div class="sl-deco sl-deco-2">⭐</div>
-      <div class="sl-deco sl-deco-3">🌿</div>
-      <div class="sl-deco sl-deco-4">🌸</div>
-      <div class="sl-deco sl-deco-5">☁️</div>
-      <div class="sl-deco sl-deco-6">⭐</div>
-      <div class="sl-board" id="sl-board"></div>
+    <!-- Left panel: current player token + big dice + roll button -->
+    <div class="sl-side-panel sl-you-panel">
+      <div class="sl-panel-piece" id="sl-panel-token">🎲</div>
+      <div class="sl-panel-name" id="sl-panel-name">Player</div>
+      <div class="sl-dice-sm" id="sl-main-dice">🎲</div>
+      <div class="sl-last-roll-label">Last Roll</div>
+      <div class="sl-last-roll" id="sl-last-roll">—</div>
+      <button class="btn btn-primary sl-roll-btn" id="sl-roll-btn"
+              onclick="SnakesLadders.rollDice()" disabled>🎲 Roll!</button>
     </div>
 
-    <!-- Legend -->
-    <div class="sl-legend">
-      <span>🐍 Snake = go down</span>
-      <span>🪜 Ladder = go up</span>
-    </div>
-
-    <!-- Roll button (large, centered) -->
-    <div style="text-align:center;margin:12px 0">
-      <button class="btn btn-primary btn-lg sl-roll-main-btn" id="sl-roll-btn"
-              onclick="SnakesLadders.rollDice()" disabled>
-        🎲 Roll the Dice!
-      </button>
-      <div style="margin-top:8px">
-        <button class="btn btn-secondary" style="font-size:.82rem"
-                onclick="SnakesLadders._startVsFriend()">🤝 vs Friend Online</button>
+    <!-- Center: players bar + status + board + legend -->
+    <div class="sl-board-area">
+      <div class="sl-players-bar" id="sl-players-bar"></div>
+      <div class="sl-status" id="sl-status"></div>
+      <div class="sl-jungle-wrap">
+        <div class="sl-deco sl-deco-1">☁️</div>
+        <div class="sl-deco sl-deco-2">⭐</div>
+        <div class="sl-deco sl-deco-3">🌿</div>
+        <div class="sl-deco sl-deco-4">🌸</div>
+        <div class="sl-deco sl-deco-5">☁️</div>
+        <div class="sl-deco sl-deco-6">⭐</div>
+        <div class="sl-board" id="sl-board"></div>
       </div>
+      <div class="sl-legend">
+        <span>🐍 Snake = go down</span>
+        <span>🪜 Ladder = go up</span>
+      </div>
+    </div>
+
+    <!-- Right panel: vs Friend -->
+    <div class="sl-side-panel sl-comp-panel">
+      <div style="font-size:1.9rem">🤝</div>
+      <div class="sl-panel-name" style="font-size:.9rem">Online Play</div>
+      <button onclick="SnakesLadders._startVsFriend()"
+              style="background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;
+                     border-radius:12px;padding:10px 8px;font-size:.8rem;font-weight:800;
+                     cursor:pointer;font-family:'Fredoka One',cursive;width:100%;
+                     transition:opacity .2s"
+              onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+        🤝 vs Friend
+      </button>
+      <p style="font-size:.7rem;color:#9ca3af;font-weight:600;margin:0;line-height:1.4">
+        🔑 Login required
+      </p>
     </div>
 
   </div>
