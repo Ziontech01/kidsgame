@@ -906,7 +906,7 @@ tr:hover td{background:#fafbff}
 .lc-home-yellow.lc-starter::after,
 .lc-home-green.lc-starter::after,
 .lc-home-red.lc-starter::after{
-  content:'';position:absolute;inset:14%;border-radius:50%;z-index:0;
+  content:'';position:absolute;inset:14%;border-radius:50%;z-index:-1;
   box-shadow:0 3px 8px rgba(0,0,0,.3),inset 0 2px 4px rgba(255,255,255,.5);
   pointer-events:none}
 .lc-home-blue.lc-starter::after  {background:radial-gradient(circle at 36% 30%,#60a5fa,#1e40af)}

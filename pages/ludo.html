@@ -43,14 +43,20 @@
       font-weight: 800;
     }
 
-    /* ── Active home glow — brightness only, NO per-cell box-shadow (causes white grid boxes) */
-    .lc-home-active { filter: brightness(1.22) drop-shadow(0 0 6px rgba(255,255,255,.5)) !important; }
+    /* ── Active home glow
+         NO filter / opacity / transform — those create per-cell stacking contexts
+         which bury piece z-indexes. Use background-image overlay instead.        */
+    .lc-home-active {
+      background-image: linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,.22)) !important;
+    }
 
-    /* ── Token in piece ───────────────────────────────────────── */
+    /* ── Piece tokens — always above every home-zone layer ────── */
     .lc-piece {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
+      position: relative !important;
+      z-index: 20 !important;
     }
     /* Token emoji — scales with board width so it's always readable */
     .lc-tok {
