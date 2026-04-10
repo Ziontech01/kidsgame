@@ -389,7 +389,7 @@ const LudoGame = (() => {
 
     const cp = _cp();
     _setDiceColor(cp.colors[0]);
-    _highlightActiveHome(cp.colors[0]);
+    _highlightActiveHome(cp.colors);
 
     if (cp.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
@@ -407,14 +407,17 @@ const LudoGame = (() => {
   /* ════════════════════════════════════════════════════════════
      ACTIVE HOME HIGHLIGHT
   ════════════════════════════════════════════════════════════ */
-  function _highlightActiveHome(color) {
-    // Remove from all
+  function _highlightActiveHome(colors) {
+    // Remove glow from all home zones
     ['blue','yellow','green','red'].forEach(c => {
       document.querySelectorAll(`.lc-home-${c}`).forEach(el => el.classList.remove('lc-home-active'));
     });
-    // Add to current
-    if (color) {
-      document.querySelectorAll(`.lc-home-${color}`).forEach(el => el.classList.add('lc-home-active'));
+    // Add glow to every colour the current player owns
+    if (colors) {
+      const list = Array.isArray(colors) ? colors : [colors];
+      list.forEach(c => {
+        document.querySelectorAll(`.lc-home-${c}`).forEach(el => el.classList.add('lc-home-active'));
+      });
     }
   }
 
@@ -667,7 +670,7 @@ const LudoGame = (() => {
       // Rolled 6 — same player goes again
       const cp = _cp();
       _setDiceColor(cp.colors[0]);
-      _highlightActiveHome(cp.colors[0]);
+      _highlightActiveHome(cp.colors);
       if (cp.isComputer) {
         setStatus('🤖 Computer rolled 6 — goes again!', 'gray');
         setTimeout(computerTurn, 700);
@@ -692,7 +695,7 @@ const LudoGame = (() => {
 
     const next = _cp();
     _setDiceColor(next.colors[0]);
-    _highlightActiveHome(next.colors[0]);
+    _highlightActiveHome(next.colors);
 
     if (next.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
