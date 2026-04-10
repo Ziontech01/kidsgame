@@ -891,12 +891,9 @@ tr:hover td{background:#fafbff}
 .lc-home-green {background:#15803d;border:2px solid #15803d}
 .lc-home-red   {background:#dc2626;border:2px solid #dc2626}
 
-/* Remove internal grid lines from home zones — match border to background so no seam shows */
-.lc-home-blue   { border-color: #1e40af !important; }
-.lc-home-yellow { border-color: #ca8a04 !important; }
-.lc-home-green  { border-color: #15803d !important; }
-.lc-home-red    { border-color: #dc2626 !important; }
-.lc-home-inner  { border-color: transparent !important; }
+/* Remove all cell borders in home zones so corners look solid (no grid lines) */
+.lc-home-blue, .lc-home-yellow, .lc-home-green, .lc-home-red,
+.lc-home-inner { border: none !important; }
 
 /* Inner 4×4 white area within each home zone */
 .lc-home-inner{background:#fff !important;border:1px solid #e5e7eb}

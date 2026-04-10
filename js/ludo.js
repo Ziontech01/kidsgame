@@ -552,7 +552,7 @@ const LudoGame = (() => {
     token.className = `lc-piece lc-piece-${color}`;
     // Show token icon inside piece (use player-chosen token if available)
     const tok = state.playerTokens?.[color] || TOKENS[Object.keys(COLOR_CONFIG).indexOf(color) % TOKENS.length];
-    token.innerHTML = `<span style="font-size:.55em;line-height:1">${tok}</span>`;
+    token.innerHTML = `<span class="lc-tok">${tok}</span>`;
     const owner = state.players?.find(p => p.colors.includes(color));
     token.title = `${owner?.name || color} — piece ${pi + 1}`;
     if (clickable) {
@@ -862,7 +862,7 @@ const LudoGame = (() => {
       // Build rankings table
       const rankHtml = state.placements.map((pl, i) => {
         const plColStr = pl.colors.map(c => COLOR_CONFIG[c].emoji).join('');
-        const tok = TOKENS[Object.keys(COLOR_CONFIG).indexOf(pl.colors[0]) % TOKENS.length];
+        const tok = state.playerTokens?.[pl.colors[0]] || TOKENS[Object.keys(COLOR_CONFIG).indexOf(pl.colors[0]) % TOKENS.length];
         return `
           <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;
                border-radius:12px;background:${i === 0 ? 'linear-gradient(135deg,#fef9c3,#fde68a)' : '#f9fafb'};
@@ -936,8 +936,8 @@ const LudoGame = (() => {
       const el2    = document.getElementById('ludo-dice-val-2');
       const faces  = ['⚀','⚁','⚂','⚃','⚄','⚅'];
       const result = Math.floor(Math.random() * 6) + 1;
-      // Randomly 3 or 6 seconds
-      const totalMs = Math.random() < 0.5 ? 3000 : 6000;
+      // Roll duration: 1.5–3 seconds (random ease-out)
+      const totalMs = 1500 + Math.random() * 1500;
       const start   = Date.now();
       let   lastSound = Date.now();
 

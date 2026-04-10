@@ -663,8 +663,8 @@ const SnakesLadders = (() => {
       const diceEl  = document.getElementById(elId);
       const faces   = ['⚀','⚁','⚂','⚃','⚄','⚅'];
       const final   = Math.floor(Math.random() * 6) + 1;
-      // Randomly 3 or 6 seconds
-      const totalMs = Math.random() < 0.5 ? 3000 : 6000;
+      // Roll duration: 1.5–3 seconds (random ease-out)
+      const totalMs = 1500 + Math.random() * 1500;
       const start   = Date.now();
       let   lastSound = Date.now();
 
