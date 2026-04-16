@@ -118,7 +118,25 @@
       <div style="text-align:center;padding:32px 20px">
         <div style="font-size:3.5rem;margin-bottom:12px">🃏</div>
         <div style="font-family:'Fredoka One',cursive;font-size:2rem;color:#1A1A2E;margin-bottom:6px">Memory Game</div>
-        <p style="color:#6B7280;font-weight:600;margin-bottom:20px">Flip cards to find matching pairs!</p>
+        <p style="color:#6B7280;font-weight:600;margin-bottom:16px">Flip cards to find matching pairs!</p>
+
+        <div style="background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:16px;
+                    padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;
+                    justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:560px;margin-left:auto;margin-right:auto">
+          <div style="text-align:left">
+            <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem">🤝 Challenge a Friend!</div>
+            <div style="color:rgba(255,255,255,.82);font-size:.78rem;font-weight:600">
+              Race to flip all pairs online — most matches wins!<br>
+              <span style="opacity:.7">🔑 Sign in required</span>
+            </div>
+          </div>
+          <button onclick="window._memGoMulti()"
+                  style="background:#fff;color:#6366f1;border:none;border-radius:10px;
+                         padding:10px 16px;font-weight:800;font-size:.88rem;cursor:pointer;
+                         white-space:nowrap;font-family:'Fredoka One',cursive;flex-shrink:0">
+            🤝 vs Friend
+          </button>
+        </div>
 
         <div style="background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:16px;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto">
           <div style="font-weight:800;color:#1A1A2E;margin-bottom:10px">🎯 Choose Difficulty</div>
@@ -359,4 +377,11 @@
   }
 
   window.MemoryGame = { init, setDifficulty, startGame, flipCard, backToMenu };
+  window._memGoMulti = function() {
+    if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+      window.location.href = 'memory-multi.html';
+    } else {
+      window.location.href = '../login.html';
+    }
+  };
 })();

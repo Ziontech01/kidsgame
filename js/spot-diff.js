@@ -150,11 +150,21 @@ const SpotDiff = (() => {
               <div class="sd-scene-sub">5 differences to find</div>
             </button>`).join('')}
         </div>
-        <div style="text-align:center;margin-top:8px">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">
           <button class="btn btn-primary btn-lg" onclick="SpotDiff._startScene(${Math.floor(Math.random()*SCENES.length)})">
             🎲 Random Scene
           </button>
+          <button onclick="SpotDiff._goMulti()"
+                  style="background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;
+                         border-radius:50px;padding:12px 24px;font-size:1rem;font-weight:800;
+                         cursor:pointer;font-family:'Fredoka One',cursive;transition:opacity .2s"
+                  onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            🤝 vs Friend Online
+          </button>
         </div>
+        <p style="text-align:center;font-size:.75rem;color:#aaa;font-weight:600;margin-top:8px">
+          🔑 Sign in required for online play
+        </p>
       </div>`;
     hideLoading();
   }
@@ -409,5 +419,13 @@ const SpotDiff = (() => {
     if (ol) ol.classList.add('hidden');
   }
 
-  return { init, _startScene, _clickCell, _useHint };
+  function _goMulti() {
+    if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+      window.location.href = 'spot-diff-multi.html';
+    } else {
+      window.location.href = '../login.html';
+    }
+  }
+
+  return { init, _startScene, _clickCell, _useHint, _goMulti };
 })();

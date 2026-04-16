@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "XO Fun!",
+      "runtimeExecutable": "C:\\Windows\\System32\\cmd.exe",
+      "runtimeArgs": ["/c", "C:\\Users\\tosin\\Documents (PC)\\kidsgame\\start-server.bat"],
+      "port": 5500,
+      "autoPort": true
+    }
+  ]
+}

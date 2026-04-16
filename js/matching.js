@@ -113,7 +113,26 @@
       <div style="text-align:center;padding:32px 20px">
         <div style="font-size:3.5rem;margin-bottom:12px">🎯</div>
         <div style="font-family:'Fredoka One',cursive;font-size:2rem;color:#1A1A2E;margin-bottom:8px">Matching Game</div>
-        <p style="color:#6B7280;font-weight:600;margin-bottom:32px">Pick a category and find all the matching pairs!</p>
+        <p style="color:#6B7280;font-weight:600;margin-bottom:20px">Pick a category and find all the matching pairs!</p>
+
+        <div style="background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:16px;
+                    padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;
+                    justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="text-align:left">
+            <div style="color:#fff;font-family:'Fredoka One',cursive;font-size:1rem">🤝 Challenge a Friend!</div>
+            <div style="color:rgba(255,255,255,.82);font-size:.78rem;font-weight:600">
+              Race to match all pairs online — first to finish wins!<br>
+              <span style="opacity:.7">🔑 Sign in required</span>
+            </div>
+          </div>
+          <button onclick="window._matchGoMulti()"
+                  style="background:#fff;color:#6366f1;border:none;border-radius:10px;
+                         padding:10px 16px;font-weight:800;font-size:.88rem;cursor:pointer;
+                         white-space:nowrap;font-family:'Fredoka One',cursive;flex-shrink:0">
+            🤝 vs Friend
+          </button>
+        </div>
+
         <div class="matching-cat-grid">
           ${Object.entries(CATEGORIES).map(([key, cat]) => `
             <div class="matching-cat-card" onclick="MatchingGame.startCategory('${key}')"
@@ -317,4 +336,11 @@
 
   // Public API
   window.MatchingGame = { init, startCategory, selectItem, selectTarget, backToMenu };
+  window._matchGoMulti = function() {
+    if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+      window.location.href = 'matching-multi.html';
+    } else {
+      window.location.href = '../login.html';
+    }
+  };
 })();

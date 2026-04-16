@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kids Fun Town 🎮</title>
+  <!-- Google Fonts: Fredoka One (headings) + Nunito (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== TOP BAR ===================== -->
+  <div id="top-bar">
+    <span id="top-title">🎮 Kids Fun Town</span>
+    <div id="top-controls">
+      <button id="mute-btn" class="icon-btn" title="Toggle Sound">🔊</button>
+      <button id="motion-btn" class="icon-btn" title="Toggle Animations">✨</button>
+    </div>
+  </div>
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <div id="setup-screen" class="screen active">
+    <div id="setup-card">
+      <h1 id="setup-title">🎮 Kids Fun Town</h1>
+      <p id="setup-subtitle">A fun board game for everyone!</p>
+
+      <!-- Player Count -->
+      <div id="player-count-section">
+        <h2>How many players?</h2>
+        <div id="player-count-btns">
+          <button class="count-btn active" data-count="2">2 Players</button>
+          <button class="count-btn" data-count="3">3 Players</button>
+          <button class="count-btn" data-count="4">4 Players</button>
+        </div>
+      </div>
+
+      <!-- Player Setup Rows -->
+      <div id="player-rows">
+        <!-- Player 1 -->
+        <div class="player-row" data-player="0">
+          <span class="player-label" style="color: var(--p1);">Player 1</span>
+          <input class="player-name-input" type="text" placeholder="Enter name..." maxlength="12" value="Player 1" />
+          <div class="token-picker">
+            <button class="token-btn selected" data-token="0">🧸</button>
+            <button class="token-btn" data-token="1">🐰</button>
+            <button class="token-btn" data-token="2">🤖</button>
+            <button class="token-btn" data-token="3">🦄</button>
+            <button class="token-btn" data-token="4">🐕</button>
+            <button class="token-btn" data-token="5">🦖</button>
+            <button class="token-btn" data-token="6">🚗</button>
+            <button class="token-btn" data-token="7">👾</button>
+          </div>
+          <label class="ai-label"><input class="ai-toggle" type="checkbox" /> 🤖 AI</label>
+        </div>
+        <!-- Player 2 -->
+        <div class="player-row" data-player="1">
+          <span class="player-label" style="color: var(--p2);">Player 2</span>
+          <input class="player-name-input" type="text" placeholder="Enter name..." maxlength="12" value="Player 2" />
+          <div class="token-picker">
+            <button class="token-btn" data-token="0">🧸</button>
+            <button class="token-btn selected" data-token="1">🐰</button>
+            <button class="token-btn" data-token="2">🤖</button>
+            <button class="token-btn" data-token="3">🦄</button>
+            <button class="token-btn" data-token="4">🐕</button>
+            <button class="token-btn" data-token="5">🦖</button>
+            <button class="token-btn" data-token="6">🚗</button>
+            <button class="token-btn" data-token="7">👾</button>
+          </div>
+          <label class="ai-label"><input class="ai-toggle" type="checkbox" /> 🤖 AI</label>
+        </div>
+        <!-- Player 3 -->
+        <div class="player-row" data-player="2" style="display:none;">
+          <span class="player-label" style="color: var(--p3);">Player 3</span>
+          <input class="player-name-input" type="text" placeholder="Enter name..." maxlength="12" value="Player 3" />
+          <div class="token-picker">
+            <button class="token-btn" data-token="0">🧸</button>
+            <button class="token-btn" data-token="1">🐰</button>
+            <button class="token-btn selected" data-token="2">🤖</button>
+            <button class="token-btn" data-token="3">🦄</button>
+            <button class="token-btn" data-token="4">🐕</button>
+            <button class="token-btn" data-token="5">🦖</button>
+            <button class="token-btn" data-token="6">🚗</button>
+            <button class="token-btn" data-token="7">👾</button>
+          </div>
+          <label class="ai-label"><input class="ai-toggle" type="checkbox" /> 🤖 AI</label>
+        </div>
+        <!-- Player 4 -->
+        <div class="player-row" data-player="3" style="display:none;">
+          <span class="player-label" style="color: var(--p4);">Player 4</span>
+          <input class="player-name-input" type="text" placeholder="Enter name..." maxlength="12" value="Player 4" />
+          <div class="token-picker">
+            <button class="token-btn" data-token="0">🧸</button>
+            <button class="token-btn" data-token="1">🐰</button>
+            <button class="token-btn" data-token="2">🤖</button>
+            <button class="token-btn selected" data-token="3">🦄</button>
+            <button class="token-btn" data-token="4">🐕</button>
+            <button class="token-btn" data-token="5">🦖</button>
+            <button class="token-btn" data-token="6">🚗</button>
+            <button class="token-btn" data-token="7">👾</button>
+          </div>
+          <label class="ai-label"><input class="ai-toggle" type="checkbox" /> 🤖 AI</label>
+        </div>
+      </div>
+
+      <button id="start-btn" class="big-btn primary-btn">🎲 Start Game!</button>
+    </div>
+  </div>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <div id="game-screen" class="screen">
+    <div id="game-layout">
+
+      <!-- Left Player Panels -->
+      <div id="player-panels-left" class="player-panels-side"></div>
+
+      <!-- Board Area -->
+      <div id="board-area">
+        <div id="game-board">
+          <!-- Tiles will be injected by board.js -->
+          <!-- Center area -->
+          <div id="board-center">
+            <div class="center-float" style="--delay:0s">🌈</div>
+            <div class="center-float" style="--delay:0.5s">☁️</div>
+            <div class="center-float" style="--delay:1s">⭐</div>
+            <div class="center-float" style="--delay:1.5s">🎈</div>
+            <div class="center-float" style="--delay:2s">✨</div>
+            <div class="center-float" style="--delay:2.5s">🦋</div>
+            <div class="center-float" style="--delay:3s">🌸</div>
+            <div class="center-float" style="--delay:3.5s">🏰</div>
+            <div class="center-title">🎮 Kids Fun Town</div>
+          </div>
+          <!-- Token container - tokens are positioned absolutely here -->
+          <div id="token-container"></div>
+        </div>
+
+        <!-- Bottom bar: message + dice -->
+        <div id="bottom-bar">
+          <div id="message-bar">Welcome to Kids Fun Town! 🎉</div>
+          <div id="dice-area">
+            <div id="dice-display">🎲</div>
+            <button id="roll-btn" class="big-btn primary-btn">🎲 Roll Dice!</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Player Panels -->
+      <div id="player-panels-right" class="player-panels-side"></div>
+    </div>
+  </div>
+
+  <!-- ===================== WIN SCREEN ===================== -->
+  <div id="win-screen" class="screen">
+    <div id="win-card">
+      <div id="win-trophy">🏆</div>
+      <h1 id="win-title">Game Over!</h1>
+      <p id="win-subtitle">What a fun game!</p>
+      <div id="win-rankings"></div>
+      <button id="play-again-btn" class="big-btn primary-btn">🎮 Play Again!</button>
+    </div>
+  </div>
+
+  <!-- ===================== ACTION POPUP ===================== -->
+  <div id="action-popup" class="popup-overlay hidden">
+    <div id="popup-card" class="popup-card">
+      <div id="popup-emoji" class="popup-emoji"></div>
+      <h2 id="popup-title"></h2>
+      <p id="popup-body"></p>
+      <div id="popup-buttons"></div>
+    </div>
+  </div>
+
+  <!-- ===================== CONFETTI CONTAINER ===================== -->
+  <div id="confetti-container"></div>
+
+  <!-- ===================== JS FILES (order matters) ===================== -->
+  <script src="js/board.js"></script>
+  <script src="js/players.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

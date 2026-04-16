@@ -85,6 +85,9 @@ const LudoGame = (() => {
     red:    { emoji: '🔴', label: 'Red',    css: '#991b1b' }
   };
 
+  // Token icons — assigned by player slot index
+  const TOKENS = ['🐻','🐰','🚗','🦖','🤖','🐕','🦄','👾'];
+
   /* ── State ──────────────────────────────────────────────────── */
   let state = {};
 
@@ -97,6 +100,8 @@ const LudoGame = (() => {
     // Reset dice display
     const diceEl = document.getElementById('ludo-dice-val');
     if (diceEl) diceEl.textContent = '🎲';
+    const diceEl2 = document.getElementById('ludo-dice-val-2');
+    if (diceEl2) diceEl2.textContent = '🎲';
     renderSetup();
   }
 
@@ -138,16 +143,64 @@ const LudoGame = (() => {
           </button>
         </div>
 
+        <div style="margin-top:18px">
+          <div class="ludo-setup-divider">Game Mode</div>
+          <div class="ludo-gamemode-btns">
+            <button class="ludo-gamemode-btn selected" id="ludo-gm-kids"
+                    onclick="LudoGame._selectGameMode('kids')">
+              <span class="ludo-gamemode-icon">🌟</span>
+              <span class="ludo-gamemode-label">Kids Mode</span>
+              <span class="ludo-gamemode-sub">✅ Enter on 1 or 6</span>
+              <span class="ludo-gamemode-rec">Recommended ages 5–8!</span>
+            </button>
+            <button class="ludo-gamemode-btn" id="ludo-gm-classic"
+                    onclick="LudoGame._selectGameMode('classic')">
+              <span class="ludo-gamemode-icon">🎯</span>
+              <span class="ludo-gamemode-label">Classic Mode</span>
+              <span class="ludo-gamemode-sub">Enter on 6 only</span>
+              <span class="ludo-gamemode-rec">&nbsp;</span>
+            </button>
+          </div>
+        </div>
+
         <div id="ludo-name-section" style="display:none">
           <div class="ludo-setup-divider">Enter Player Names</div>
           <div id="ludo-name-inputs"></div>
           <button class="btn btn-primary btn-lg ludo-start-btn"
             onclick="LudoGame._startGame()">🎲 Start Game!</button>
         </div>
+
+        <div style="margin-top:18px;padding-top:16px;border-top:2px dashed #e5e7eb;text-align:center">
+          <div style="font-size:.78rem;color:#aaa;font-weight:700;margin-bottom:10px;
+                      text-transform:uppercase;letter-spacing:.06em">— or play online —</div>
+          <button onclick="LudoGame._startVsFriend()"
+                  style="background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;border:none;
+                         border-radius:14px;padding:14px 28px;font-size:1rem;font-weight:800;
+                         cursor:pointer;font-family:'Fredoka One',cursive;width:100%;
+                         transition:opacity .2s"
+                  onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            🤝 vs Friend Online
+          </button>
+          <p style="font-size:.75rem;color:#aaa;margin-top:8px;font-weight:600">
+            🔑 Sign in required for online play
+          </p>
+        </div>
       </div>`;
 
-    // Store logged-in name for auto-fill
+    // Store defaults
     setupEl._loggedName = loggedName;
+    setupEl._gameMode   = 'kids';
+  }
+
+  function _selectGameMode(mode) {
+    window.SFX?.play('click');
+    const setupEl = document.getElementById('ludo-setup');
+    if (setupEl) setupEl._gameMode = mode;
+
+    const kBtn = document.getElementById('ludo-gm-kids');
+    const cBtn = document.getElementById('ludo-gm-classic');
+    if (kBtn) kBtn.classList.toggle('selected', mode === 'kids');
+    if (cBtn) cBtn.classList.toggle('selected', mode === 'classic');
   }
 
   function _selectMode(mode) {
@@ -192,21 +245,45 @@ const LudoGame = (() => {
             `<span class="ludo-chip ludo-chip-${c}">${COLOR_CONFIG[c].emoji} ${COLOR_CONFIG[c].label}</span>`
           ).join('')}
         </div>
-        <input type="text" class="ludo-name-input" id="ludo-inp-${i}"
-          placeholder="${s.label}'s name"
-          value="${s.prefill || ''}" maxlength="18" autocomplete="off"/>
+        <div style="flex:1">
+          <input type="text" class="ludo-name-input" id="ludo-inp-${i}"
+            placeholder="${s.label}'s name"
+            value="${s.prefill || ''}" maxlength="18" autocomplete="off"/>
+          <div class="ludo-token-row" id="ludo-tok-${i}">
+            ${TOKENS.map((t, ti) => `<button class="ludo-token-btn${ti === i % TOKENS.length ? ' active' : ''}"
+              onclick="LudoGame._selectToken(${i},${ti})">${t}</button>`).join('')}
+          </div>
+        </div>
       </div>`).join('');
 
     // Store mode + slots for _startGame
-    document.getElementById('ludo-setup')._mode  = mode;
-    document.getElementById('ludo-setup')._slots = slots;
+    const setupEl2 = document.getElementById('ludo-setup');
+    setupEl2._mode   = mode;
+    setupEl2._slots  = slots;
+    setupEl2._tokens = {};  // reset token choices on mode change
+    // Set defaults: slot i → token at index i
+    slots.forEach((_, i) => { setupEl2._tokens[i] = i % TOKENS.length; });
+  }
+
+  function _selectToken(slotIdx, tokenIdx) {
+    window.SFX?.play('click');
+    const setupEl = document.getElementById('ludo-setup');
+    if (!setupEl._tokens) setupEl._tokens = {};
+    setupEl._tokens[slotIdx] = tokenIdx;
+    const row = document.getElementById(`ludo-tok-${slotIdx}`);
+    if (row) {
+      row.querySelectorAll('.ludo-token-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === tokenIdx);
+      });
+    }
   }
 
   function _startGame() {
     window.SFX?.play('click');
-    const setupEl = document.getElementById('ludo-setup');
-    const mode    = setupEl?._mode;
-    const slots   = setupEl?._slots;
+    const setupEl  = document.getElementById('ludo-setup');
+    const mode     = setupEl?._mode;
+    const slots    = setupEl?._slots;
+    const gameMode = setupEl?._gameMode || 'kids';
     if (!mode || !slots) return;
 
     // Build player array
@@ -220,6 +297,20 @@ const LudoGame = (() => {
     if (mode === 1) players.push({ name: 'Computer', colors: ['green','yellow'], isComputer: true });
     if (mode === 3) players.push({ name: 'Computer', colors: ['yellow'],          isComputer: true });
 
+    // Build playerTokens map: color → chosen token emoji
+    const rawTokens = setupEl._tokens || {};
+    const playerTokens = {};
+    slots.forEach((s, i) => {
+      const tokenIdx = rawTokens[i] !== undefined ? rawTokens[i] : i % TOKENS.length;
+      s.colors.forEach(c => { playerTokens[c] = TOKENS[tokenIdx]; });
+    });
+    // CPU players get the next available token
+    const cpuOffset = slots.length;
+    players.filter(p => p.isComputer).forEach((cpuP, j) => {
+      const tokenIdx = (cpuOffset + j) % TOKENS.length;
+      cpuP.colors.forEach(c => { playerTokens[c] = TOKENS[tokenIdx]; });
+    });
+
     // Update corner labels
     _updateLabels(players);
 
@@ -228,7 +319,7 @@ const LudoGame = (() => {
     const gameArea = document.getElementById('ludo-game-area');
     if (gameArea) gameArea.style.display = 'block';
 
-    _startGameState(players);
+    _startGameState(players, gameMode, playerTokens);
   }
 
   function _updateLabels(players) {
@@ -259,7 +350,7 @@ const LudoGame = (() => {
   /* ════════════════════════════════════════════════════════════
      GAME STATE
   ════════════════════════════════════════════════════════════ */
-  function _startGameState(players) {
+  function _startGameState(players, gameMode, playerTokens) {
     const pieces = {};
     ['blue','yellow','green','red'].forEach(c => { pieces[c] = [-1,-1,-1,-1]; });
 
@@ -267,14 +358,29 @@ const LudoGame = (() => {
       pieces,
       players,
       activeColors: players.flatMap(p => p.colors),
-      turnIdx:  0,
-      die:      null,
-      rolled:   false,
-      moving:   false,
-      over:     false,
-      startTime:  Date.now(),
-      totalMoves: 0
+      turnIdx:      0,
+      die:          null,
+      rolled:       false,
+      moving:       false,
+      over:         false,
+      startTime:    Date.now(),
+      totalMoves:   0,
+      gameMode:     gameMode || 'kids',
+      placements:   [],   // finish order: [{ name, colors, isComputer, place }]
+      playerTokens: playerTokens || {}
     };
+
+    // Update mode badge and legend
+    const badge = document.getElementById('ludo-mode-badge');
+    if (badge) {
+      badge.textContent = state.gameMode === 'kids' ? '🌟 Kids Mode' : '🎯 Classic';
+    }
+    const legendEntry = document.getElementById('ludo-legend-entry');
+    if (legendEntry) {
+      legendEntry.textContent = state.gameMode === 'kids'
+        ? '🌟 Enter on 1 or 6!'
+        : '🎯 Roll 6 to enter!';
+    }
 
     buildBoard();
     renderPieces();
@@ -282,6 +388,9 @@ const LudoGame = (() => {
     updateFinishedDisplay();
 
     const cp = _cp();
+    _setDiceColor(cp.colors[0]);
+    _highlightActiveHome(cp.colors);
+
     if (cp.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
       setTimeout(computerTurn, 900);
@@ -294,6 +403,23 @@ const LudoGame = (() => {
   // shorthand helpers
   function _cp()     { return state.players[state.turnIdx]; }
   function _pEmoji(p){ return p.colors.map(c => COLOR_CONFIG[c].emoji).join(''); }
+
+  /* ════════════════════════════════════════════════════════════
+     ACTIVE HOME HIGHLIGHT
+  ════════════════════════════════════════════════════════════ */
+  function _highlightActiveHome(colors) {
+    // Remove glow from all home zones
+    ['blue','yellow','green','red'].forEach(c => {
+      document.querySelectorAll(`.lc-home-${c}`).forEach(el => el.classList.remove('lc-home-active'));
+    });
+    // Add glow to every colour the current player owns
+    if (colors) {
+      const list = Array.isArray(colors) ? colors : [colors];
+      list.forEach(c => {
+        document.querySelectorAll(`.lc-home-${c}`).forEach(el => el.classList.add('lc-home-active'));
+      });
+    }
+  }
 
   /* ════════════════════════════════════════════════════════════
      BUILD 15×15 BOARD
@@ -427,7 +553,9 @@ const LudoGame = (() => {
     if (!cell) return;
     const token = document.createElement('div');
     token.className = `lc-piece lc-piece-${color}`;
-    token.textContent = pi + 1;
+    // Show token icon inside piece (use player-chosen token if available)
+    const tok = state.playerTokens?.[color] || TOKENS[Object.keys(COLOR_CONFIG).indexOf(color) % TOKENS.length];
+    token.innerHTML = `<span class="lc-tok">${tok}</span>`;
     const owner = state.players?.find(p => p.colors.includes(color));
     token.title = `${owner?.name || color} — piece ${pi + 1}`;
     if (clickable) {
@@ -490,7 +618,9 @@ const LudoGame = (() => {
     const cp      = _cp();
     const ce      = COLOR_CONFIG[color].emoji;
 
-    if (pos === -1 && die === 6) {
+    const canEnter = state.gameMode === 'kids' ? (die === 1 || die === 6) : die === 6;
+
+    if (pos === -1 && canEnter) {
       // Enter the board
       pieces[pi] = 0;
       renderPieces();
@@ -510,7 +640,7 @@ const LudoGame = (() => {
         for (let step = 1; step <= die; step++) {
           pieces[pi] = pos + step;
           renderPieces();
-          await pause(130);
+          await pause(700);
         }
         if (newPos === 59) {
           pieces[pi] = 60;
@@ -539,6 +669,8 @@ const LudoGame = (() => {
     if (!switchPlayer) {
       // Rolled 6 — same player goes again
       const cp = _cp();
+      _setDiceColor(cp.colors[0]);
+      _highlightActiveHome(cp.colors);
       if (cp.isComputer) {
         setStatus('🤖 Computer rolled 6 — goes again!', 'gray');
         setTimeout(computerTurn, 700);
@@ -549,9 +681,21 @@ const LudoGame = (() => {
       return;
     }
 
-    // Advance turn index
-    state.turnIdx = (state.turnIdx + 1) % state.players.length;
+    // Advance turn index — skip players who have already finished
+    let attempts = 0;
+    do {
+      state.turnIdx = (state.turnIdx + 1) % state.players.length;
+      attempts++;
+    } while (
+      state.placements.find(pl => pl.name === _cp().name && pl.colors[0] === _cp().colors[0]) &&
+      attempts < state.players.length
+    );
+
+    if (state.over) return; // all players placed, game ended in recordPlacement
+
     const next = _cp();
+    _setDiceColor(next.colors[0]);
+    _highlightActiveHome(next.colors);
 
     if (next.isComputer) {
       setStatus('🤖 Computer is thinking…', 'gray');
@@ -636,10 +780,20 @@ const LudoGame = (() => {
         if ((COLOR_ENTRY[victimColor] + vp) % 56 === moverAbs) {
           state.pieces[victimColor][vi] = -1;
           window.SFX?.play('opponent_move');
+
+          // Enhanced capture message
           setStatus(
-            `💥 ${COLOR_CONFIG[moverColor].emoji} captured ${COLOR_CONFIG[victimColor].emoji}! Sent home.`,
+            `💥 ${COLOR_CONFIG[moverColor].emoji} got one! ${COLOR_CONFIG[victimColor].emoji} Back to home! 🏠`,
             moverColor
           );
+
+          // Brief flash on the current cell
+          const [flashCol, flashRow] = MAIN_TRACK[moverAbs];
+          const flashCell = document.getElementById(`lc-${flashCol}-${flashRow}`);
+          if (flashCell) {
+            flashCell.classList.add('lc-capture-flash');
+            setTimeout(() => flashCell.classList.remove('lc-capture-flash'), 600);
+          }
         }
       });
     });
@@ -651,43 +805,107 @@ const LudoGame = (() => {
   ════════════════════════════════════════════════════════════ */
   function checkWin() {
     for (const player of state.players) {
+      // Skip already-placed players
+      if (state.placements.find(pl => pl.name === player.name && pl.colors[0] === player.colors[0])) continue;
       if (player.colors.every(c => state.pieces[c].every(p => p === 60))) {
-        state.over = true;
-        endGame(player);
+        recordPlacement(player);
         return true;
       }
     }
     return false;
   }
 
-  async function endGame(winner) {
+  function recordPlacement(player) {
+    const place = state.placements.length + 1;
+    state.placements.push({ name: player.name, colors: player.colors, isComputer: player.isComputer, place });
+
+    const medals  = ['🥇','🥈','🥉','🏅'];
+    const medal   = medals[place - 1] || `#${place}`;
+    const colStr  = player.colors.map(c => COLOR_CONFIG[c].emoji).join('');
+    const ordinal = place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : place + 'th';
+    window.SFX?.play('win');
+    setStatus(`${medal} ${player.name} finished in ${ordinal} place! ${colStr} All pieces home!`, player.colors[0]);
+
+    // Count unfinished players
+    const unfinished = state.players.filter(p =>
+      !state.placements.find(pl => pl.name === p.name && pl.colors[0] === p.colors[0])
+    );
+
+    if (unfinished.length === 0) {
+      // All done
+      state.over = true;
+      confettiEffect();
+      showFinalRankings();
+    } else if (unfinished.length === 1) {
+      // Last player gets last place automatically
+      const last = unfinished[0];
+      state.placements.push({ name: last.name, colors: last.colors, isComputer: last.isComputer, place: state.placements.length + 1 });
+      state.over = true;
+      confettiEffect();
+      showFinalRankings();
+    }
+    // else: game continues — endTurn() will handle advancing to next player
+  }
+
+  async function showFinalRankings() {
     enableRoll(false);
     const elapsed = Math.round((Date.now() - state.startTime) / 1000);
     const mm = Math.floor(elapsed / 60), ss = String(elapsed % 60).padStart(2, '0');
     const timeStr = `${mm}:${ss}`;
-    const isHuman = !winner.isComputer;
+    const medals  = ['🥇','🥈','🥉','🏅'];
+    const winner  = state.placements[0];
     const colStr  = winner.colors.map(c => COLOR_CONFIG[c].emoji).join('');
-
-    window.SFX?.play(isHuman ? 'win' : 'lose');
-    setStatus(`${isHuman ? '🏆' : '🤖'} ${winner.name} wins! ${colStr}`, winner.colors[0]);
 
     const overlay = document.getElementById('ludo-end');
     if (overlay) {
       overlay.style.display = 'flex';
-      document.getElementById('ludo-end-icon').textContent  = isHuman ? '🏆' : '🤖';
-      document.getElementById('ludo-end-title').textContent = `${winner.name} Wins!`;
-      document.getElementById('ludo-end-msg').textContent   = isHuman
-        ? `Brilliant! ${winner.name} got all ${colStr} pieces home first!`
-        : `The computer won this time. Better luck next game!`;
-      document.getElementById('ludo-end-stats').innerHTML =
-        `<span>Moves: ${state.totalMoves}</span><span>Time: ${timeStr}</span>`;
+      document.getElementById('ludo-end-icon').textContent  = colStr;
+      document.getElementById('ludo-end-title').textContent = `🏆 ${winner.name} Wins!`;
+
+      // Build rankings table
+      const rankHtml = state.placements.map((pl, i) => {
+        const plColStr = pl.colors.map(c => COLOR_CONFIG[c].emoji).join('');
+        const tok = state.playerTokens?.[pl.colors[0]] || TOKENS[Object.keys(COLOR_CONFIG).indexOf(pl.colors[0]) % TOKENS.length];
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;
+               border-radius:12px;background:${i === 0 ? 'linear-gradient(135deg,#fef9c3,#fde68a)' : '#f9fafb'};
+               margin-bottom:6px;border:2px solid ${i === 0 ? '#f59e0b' : '#e5e7eb'}">
+            <span style="font-size:1.5rem">${medals[i] || '#' + (i + 1)}</span>
+            <span style="font-size:1.3rem">${tok}</span>
+            <span style="font-size:1.1rem">${plColStr}</span>
+            <span style="font-weight:800;font-size:.95rem;flex:1">${pl.name}${pl.isComputer ? ' 🤖' : ''}</span>
+            <span style="font-size:.8rem;color:#6b7280">${i === 0 ? '🏆 Winner!' : i === state.placements.length - 1 ? '😊 Good game!' : '👏 Well played!'}</span>
+          </div>`;
+      }).join('');
+
+      document.getElementById('ludo-end-msg').innerHTML  = rankHtml;
+      document.getElementById('ludo-end-stats').innerHTML = `<span>Moves: ${state.totalMoves}</span><span>Time: ${timeStr}</span>`;
     }
 
-    if (isHuman) {
+    // Save result for first human who placed
+    const firstHuman = state.placements.find(pl => !pl.isComputer);
+    if (firstHuman) {
       await saveResult({
-        gameType: 'ludo', outcome: 'win', level: 'all',
-        moves: state.totalMoves, duration: elapsed, timeStr
+        gameType: 'ludo',
+        outcome:  firstHuman.place === 1 ? 'win' : 'lose',
+        level:    'all',
+        moves:    state.totalMoves,
+        duration: elapsed,
+        timeStr
       });
+    }
+  }
+
+  function confettiEffect() {
+    const colors = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7','#ec4899'];
+    for (let i = 0; i < 35; i++) {
+      const el = document.createElement('div');
+      el.style.cssText = `position:fixed;width:10px;height:10px;border-radius:2px;
+        left:${Math.random()*100}vw;top:-10px;z-index:9999;pointer-events:none;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation:ludoConfetti ${1.5+Math.random()*2}s linear ${Math.random()*1}s forwards`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
     }
   }
 
@@ -697,7 +915,9 @@ const LudoGame = (() => {
   function getMoveable(color, die) {
     return state.pieces[color].reduce((acc, pos, pi) => {
       if (pos === 60) return acc;
-      if (pos === -1 && die === 6)  { acc.push(pi); return acc; }
+      // Enter board: Kids Mode allows 1 or 6, Classic allows only 6
+      const canEnter = state.gameMode === 'kids' ? (die === 1 || die === 6) : die === 6;
+      if (pos === -1 && canEnter) { acc.push(pi); return acc; }
       if (pos === -1) return acc;
       if (pos + die <= 59) acc.push(pi);
       return acc;
@@ -715,19 +935,53 @@ const LudoGame = (() => {
 
   function animateDice() {
     return new Promise(resolve => {
-      const el     = document.getElementById('ludo-dice-val');
+      const el1    = document.getElementById('ludo-dice-val');
+      const el2    = document.getElementById('ludo-dice-val-2');
       const faces  = ['⚀','⚁','⚂','⚃','⚄','⚅'];
       const result = Math.floor(Math.random() * 6) + 1;
-      let   count  = 0;
-      const iv = setInterval(() => {
-        if (el) el.textContent = faces[Math.floor(Math.random() * 6)];
-        if (++count >= 8) {
-          clearInterval(iv);
-          if (el) el.textContent = faces[result - 1];
+      // Roll duration: 1.5–3 seconds (random ease-out)
+      const totalMs = 1500 + Math.random() * 1500;
+      const start   = Date.now();
+      let   lastSound = Date.now();
+
+      [el1, el2].forEach(el => { if (el) el.classList.add('dice-rolling'); });
+      window.SFX?.play('click');
+
+      function tick() {
+        const elapsed  = Date.now() - start;
+        const progress = Math.min(elapsed / totalMs, 1);
+
+        if (progress >= 1) {
+          [el1, el2].forEach(el => {
+            if (el) { el.classList.remove('dice-rolling'); el.textContent = faces[result - 1]; }
+          });
           resolve(result);
+          return;
         }
-      }, 80);
+
+        if (el1) el1.textContent = faces[Math.floor(Math.random() * 6)];
+        if (el2) el2.textContent = faces[Math.floor(Math.random() * 6)];
+
+        // Tap sound every ~380ms
+        if (Date.now() - lastSound > 380) {
+          window.SFX?.play('click');
+          lastSound = Date.now();
+        }
+
+        // Ease-out: starts at 55ms, slows to 280ms
+        const delay = Math.round(55 + progress * progress * 225);
+        setTimeout(tick, delay);
+      }
+
+      tick();
     });
+  }
+
+  function _setDiceColor(color) {
+    const split = document.getElementById('ludo-dice-split');
+    if (!split) return;
+    split.className = 'ludo-dice-split';
+    if (color) split.classList.add(`ludo-dice-${color}`);
   }
 
   function setStatus(msg, colour) {
@@ -743,7 +997,14 @@ const LudoGame = (() => {
 
   function enableRoll(on) {
     const btn = document.getElementById('ludo-roll-btn');
-    if (btn) { btn.disabled = !on; btn.style.opacity = on ? '1' : '0.45'; }
+    if (btn) {
+      btn.disabled = !on;
+      btn.style.opacity = on ? '1' : '0.45';
+      if (on) {
+        const cp = _cp();
+        btn.textContent = `🎲 ${cp ? cp.name + "'s Roll!" : 'Roll Dice!'}`;
+      }
+    }
   }
 
   function pause(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -756,9 +1017,21 @@ const LudoGame = (() => {
   function restartGame() {
     window.SFX?.play('click');
     document.getElementById('ludo-end').style.display = 'none';
-    document.getElementById('ludo-dice-val').textContent = '🎲';
+    const d1 = document.getElementById('ludo-dice-val');
+    const d2 = document.getElementById('ludo-dice-val-2');
+    if (d1) d1.textContent = '🎲';
+    if (d2) d2.textContent = '🎲';
+    _setDiceColor(null);
     init(); // back to setup screen
   }
 
-  return { init, rollDice, restartGame, _selectPiece, _selectMode, _startGame };
+  function _startVsFriend() {
+    if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+      window.location.href = 'ludo-multi.html';
+    } else {
+      window.location.href = '../login.html';
+    }
+  }
+
+  return { init, rollDice, restartGame, _selectPiece, _selectMode, _selectGameMode, _selectToken, _startGame, _startVsFriend, _setDiceColor };
 })();
